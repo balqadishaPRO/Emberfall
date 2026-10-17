@@ -1,0 +1,4 @@
+.tools/
+*.exe
+node_modules/
+.openai/*.tar.gz
