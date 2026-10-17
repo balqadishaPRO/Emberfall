@@ -1,39 +1,51 @@
-# GAMAT — Micro Command
+﻿# Emberfall — The Endless Wilds
 
-A five-minute browser RTS with a Go simulation compiled to WebAssembly and a Canvas UI. No runtime dependencies, accounts, or backend required for bot matches.
+An endless, single-player 2D browser survival game. Move the Emberkeeper through an infinite forest while automatic attacks fight an escalating horde. Every kill grants experience immediately; each level-up freezes the game and offers three distinct passive abilities. Pick one and keep surviving.
 
-## Run
+## Run locally
 
-With Go 1.23+ installed, run in PowerShell:
+Node.js 18+; no installation or build step:
+
+```sh
+node scripts/serve.mjs
+```
+
+Open http://127.0.0.1:8080. To use another port in PowerShell:
 
 ```powershell
-node scripts/build.mjs
-go run ./cmd/server
+$env:PORT = '8081'
+node scripts/serve.mjs
 ```
 
-Open http://localhost:8080. Precompiled browser assets are also included in `dist/` and can be hosted on any static host. Serve over HTTP rather than opening index.html directly.
+Upload `dist/` to any static host supporting JavaScript modules to deploy. A Go static server is also included: `go run ./cmd/server`. Rebuild/restart any already-running Go server after updating source so `.mjs` files receive the correct JavaScript content type.
 
-On Linux/macOS:
+## Controls
+
+- WASD / arrow keys: move. Attacks automatically target nearby enemies.
+- Touch: drag the arena to use the movement stick.
+- Esc / P or the pause button: pause/resume.
+- Click/tap a passive or press 1, 2, 3: choose a level-up ability.
+- Optional synthesized sound can be toggled in the header.
+
+Kills grant immediate XP. XP thresholds rise each level. Passive upgrades stack; multi-projectile, piercing, orbiting-blade, and nova upgrades have rank caps. Spawn rates and enemy health grow with elapsed game time. Bats unlock after 25 seconds, brutes after 55 seconds, wraiths after 105 seconds; an elite spawns every minute. There is no final wave or victory condition. Health reaching zero ends the run; restart starts a fresh build. Longest survival is stored on this device when browser storage is available. Changing tabs automatically pauses.
+
+Scenery is decorative and does not block movement. Simultaneous common enemies are limited to 450 for browser performance; ongoing spawn pressure and scaling continue. The game uses a fixed 60 Hz simulation, spatial buckets for projectile collision, cached pixel sprites, and a Canvas renderer. Fonts have system fallbacks; no external asset is required to play.
+
+## Verification
 
 ```sh
-GOOS=js GOARCH=wasm go build -trimpath -ldflags='-s -w' -o dist/game.wasm ./cmd/game
-cp "$(go env GOROOT)/lib/wasm/wasm_exec.js" dist/wasm_exec.js
-go run ./cmd/server
+node --check dist/survival.mjs
+node scripts/survival-test.mjs
+node scripts/ui-smoke.mjs
 ```
 
-## Play
+The simulation checks cover automatic combat, immediate XP, three unique upgrade choices, passive application, time freezing during upgrades, capped upgrades, increasing spawn density, death, and a ten-minute run.
 
-Select a teal outpost, then click another outpost to deploy the chosen percentage of troops. Capture neutrals to increase production. Upgrade with 20/40 troops to reach production levels 2/3. Eliminate the bot's territory and moving fleets to win. After five minutes, army size plus territory value determines the winner. A tie is a draw.
+## Source
 
-Three bot difficulties are available. Difficulty changes bot timing and troop production. Maps use seeded neutral garrisons. Share challenge encodes the seed, difficulty, and (after finishing) score in the URL. Friends play independently against the same bot; this version has no live multiplayer. The link must point to a deployment accessible to your friend; localhost and owner-private hosting are not accessible to them.
+- `dist/engine.mjs`: standalone deterministic game simulation and passive definitions.
+- `dist/survival.mjs`: renderer, controls, UI, audio, and local records.
+- `dist/survival.css`: responsive game interface.
+- `scripts/serve.mjs`: dependency-free local server.
 
-Keyboard: Tab into the map, arrows cycle outposts, Enter selects/attacks. U upgrades, Escape clears selection, Space pauses. Switching tabs automatically pauses. Personal best is stored locally when browser storage is available.
-
-## Validate
-
-```sh
-go test ./...
-go vet ./...
-```
-
-The game engine is in `internal/game`; `cmd/game` exposes the WebAssembly bridge, `cmd/server` is the optional Go static server. The renderer uses JavaScript Canvas. Shared seeded games use a fixed 20 Hz simulation step; rendering follows the browser refresh rate.
+The earlier Go micro-RTS prototype is retained at `/micro-command.html` with its original Go source and WebAssembly assets. It is separate from the current survival game. The survival game needs no Go toolchain.

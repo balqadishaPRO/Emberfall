@@ -1,0 +1,11 @@
+import assert from 'node:assert/strict';
+import {createGame,step,chooseUpgrade,spawnEnemy,talents} from '../dist/engine.mjs';
+const g=createGame(42);g.status='playing';const target=spawnEnemy(g);target.x=100;target.y=0;target.hp=1;
+for(let i=0;i<100&&g.kills===0;i++)step(g,1/60);
+assert.equal(g.kills,1,'automatic attack must kill a nearby enemy');assert.equal(g.xp,3,'kills must grant XP immediately');
+g.xp=g.nextXP;step(g,1/60);assert.equal(g.status,'levelup');assert.equal(g.choices.length,3);assert.equal(new Set(g.choices).size,3);const time=g.time;step(g,1);assert.equal(g.time,time,'level-up must freeze the game');assert.equal(chooseUpgrade(g,'invalid'),false);const chosen=g.choices[0];assert.equal(chooseUpgrade(g,chosen),true);assert.equal(g.build[chosen],1);assert.equal(g.status,'playing');
+const capped=createGame(1);capped.build=Object.fromEntries(talents.filter(t=>t.max).map(t=>[t.id,t.max]));capped.status='playing';capped.xp=capped.nextXP;step(capped,1/60);assert.equal(capped.choices.length,3);assert.ok(capped.choices.every(id=>!talents.find(t=>t.id===id).max));
+const early=createGame(2),late=createGame(2);for(const h of [early,late]){h.status='playing';h.stats.maxHealth=1e9;h.health=1e9;h.stats.damage=0;}late.time=180;late.eliteAt=240;for(let i=0;i<600;i++){step(early,1/60);step(late,1/60)}assert.ok(late.enemies.length>early.enemies.length*3,'later runs must spawn a denser horde');
+const dead=createGame();dead.status='playing';dead.health=1;const foe=spawnEnemy(dead);foe.x=0;foe.y=0;step(dead,1/60);assert.equal(dead.status,'dead');assert.equal(dead.health,0);const before=dead.time;step(dead,1);assert.equal(dead.time,before);
+const long=createGame(11);long.status='playing';long.health=long.stats.maxHealth=1e9;for(let i=0;i<36000;i++){if(long.status==='levelup')chooseUpgrade(long,long.choices[0]);step(long,1/60,{x:Math.cos(i/1000),y:Math.sin(i/1000)})}assert.ok(long.time>590);assert.ok(long.enemies.length<500);assert.ok(Number.isFinite(long.health));assert.ok(long.level>1);
+console.log(`Survival checks passed: combat, XP, 3 choices, passive application, level-up pause, escalating spawns, death, and a 10-minute run (level ${long.level}, ${long.kills} kills).`);
