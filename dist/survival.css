@@ -6,3 +6,5 @@
 @media(max-width:700px){.menu h1{font-size:33px}.run-hud{border-radius:8px}.class-card{border-radius:7px}}
 
 #terrain{position:fixed;inset:0;width:100%;height:100%;pointer-events:none}
+
+.world-state{display:flex;justify-content:space-between;gap:6px;margin-top:10px;padding-top:7px;border-top:1px solid #71866244;font-size:9px;color:#b3c6b8}.world-state span:last-child{font-variant-numeric:tabular-nums;color:#d5d5b0}

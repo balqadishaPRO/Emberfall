@@ -1,13 +1,12 @@
-import {paintHero} from './heroes.mjs?v=ember-9';
-import {MAP,classes} from './engine.mjs?v=ember-9';
+import {paintHero} from './heroes.mjs?v=ember-10';
+import {MAP,classes} from './engine.mjs?v=ember-10';
 const TAU=Math.PI*2;
 const hash=(x,y)=>{let n=Math.imul(x,374761393)+Math.imul(y,668265263);n^=n>>>13;return(Math.imul(n,1274126177)>>>0)/4294967296};
 function ellipse(c,x,y,rx,ry,fill,stroke){c.beginPath();c.ellipse(x,y,Math.max(.01,rx),Math.max(.01,ry),0,0,TAU);if(fill){c.fillStyle=fill;c.fill()}if(stroke){c.strokeStyle=stroke;c.stroke()}}
 function circle(c,x,y,r,fill,stroke){ellipse(c,x,y,r,r,fill,stroke)}
 function line(c,points,color,width=2){c.beginPath();c.moveTo(...points[0]);for(let i=1;i<points.length;i++)c.lineTo(...points[i]);c.strokeStyle=color;c.lineWidth=width;c.lineCap='round';c.lineJoin='round';c.stroke()}
 function shape(c,points,fill,stroke='#101e1a',width=1.4){c.beginPath();c.moveTo(...points[0]);for(let i=1;i<points.length;i++)c.lineTo(...points[i]);c.closePath();if(fill){c.fillStyle=fill;c.fill()}if(stroke){c.lineWidth=width;c.strokeStyle=stroke;c.stroke()}}
-const glowCache=new Map();
-function glow(c,x,y,r,color,alpha=.25){if(c.createRadialGradient){const key=color;if(!glowCache.has(key)){const image=document.createElement('canvas');image.width=image.height=128;const ctx=image.getContext('2d'),grad=ctx.createRadialGradient(64,64,0,64,64,64);grad.addColorStop(0,color);grad.addColorStop(1,color+'00');ctx.fillStyle=grad;ctx.fillRect(0,0,128,128);if(glowCache.size>=32)glowCache.delete(glowCache.keys().next().value);glowCache.set(key,image)}c.save();c.globalAlpha=alpha;c.drawImage(glowCache.get(key),x-r,y-r,r*2,r*2);c.restore();return}c.save();c.globalAlpha=alpha;const grad=c.createRadialGradient(x,y,1,x,y,r);grad.addColorStop(0,color);grad.addColorStop(1,color+'00');c.fillStyle=grad;c.fillRect(x-r,y-r,r*2,r*2);c.restore()}
+function glow(c,x,y,r,color,alpha=.25){c.save();c.globalAlpha=alpha;c.fillStyle=color;for(let i=0;i<12;i++){const a=i/12*Math.PI*2;c.fillRect(Math.round(x+Math.cos(a)*r*.55),Math.round(y+Math.sin(a)*r*.55),2,2)}c.fillRect(Math.round(x)-2,Math.round(y)-2,4,4);c.restore()}
 function bone(c,points,color='#d6d3b9',width=3){line(c,points,'#17251f',width+2);line(c,points,color,width)}
 function rock(c,x,y,r,seed){const points=[];for(let i=0;i<8;i++){const a=i/8*TAU,k=.75+hash(seed,i)*.28;points.push([x+Math.cos(a)*r*k,y+Math.sin(a)*r*.65*k])}ellipse(c,x+5,y+14,r*1.1,r*.5,'#0818118c');shape(c,points,'#465345','#1c3026',2);shape(c,[points[4],points[5],points[6],[x+4,y-1],points[3]],'#6a745a',null);line(c,[[x-r*.4,y-r*.23],[x,y-r*.38],[x+r*.3,y-r*.2]],'#9ca47844',2);line(c,[[x+5,y-2],[x+10,y+10],[x+7,y+20]],'#263c2e',2)}
 export function buildMap(){const image=document.createElement('canvas');image.width=MAP.right-MAP.left;image.height=MAP.bottom-MAP.top;const c=image.getContext('2d');c.translate(-MAP.left,-MAP.top);c.fillStyle='#14291f';c.fillRect(MAP.left,MAP.top,image.width,image.height);

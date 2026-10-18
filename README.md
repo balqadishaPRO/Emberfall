@@ -1,6 +1,6 @@
 # Emberfall — The Hollow Wood
 
-A lightweight, fullscreen, solo 2D survival game for the browser. Seven classes fight an escalating horde inside a bounded 1400 × 980 arena. Kills grant XP immediately; every level pauses combat and offers three eligible passive upgrades. Choosing grants two seconds of protection.
+A lightweight, fullscreen, solo 2D survival game for the browser. Seven classes fight an escalating horde inside a bounded 1400 × 980 arena that cycles through ten realms. Kills grant XP immediately; every level pauses combat and offers three eligible passive upgrades. Choosing grants two seconds of protection.
 
 ## Run
 
@@ -29,7 +29,7 @@ Deploy `dist/` on a static host that serves `.mjs` as JavaScript. The optional G
 
 The compact top-right panel holds health, XP, level, time, kills, a small elite countdown, and the active button. A ready ultimate has a saturated class color, bright border, and larger icon; it does not pulse or animate. Hover over the clock for wave and difficulty budget. Boss/miniboss names and health bars appear above their heads. There is no bottom dock, top-center counter strip, minimap, floating damage text, screen shake, or particle swarms. A 32-unit basic attack cooldown bar sits directly above each class’s head, filling amber and turning pale green when ready. Melee classes have a transparent primary attack-range circle that follows reach and area upgrades.
 
-The renderer plays four baked illustrated poses (idle, two walking/flying frames, attack) from sprite atlases, including mirrored frames. No character paths or glow filters run in the frame loop. System reduced-motion preference disables pose playback. Pausing freezes the simulation/animation clock. Rendering targets 60 FPS with corrected frame pacing and drops to 30 if measured draw submission cost exceeds the budget. Simulation remains at 60 Hz. Canvas pixel density is capped at 1.5 and 1.8 million backing pixels, dropping to 1× for crowded fights. Terrain has a separate canvas and redraws only when camera position or size changes. Render lists and collision buckets are reused. CSS transitions remain disabled.
+The renderer plays four baked illustrated poses (idle, two walking/flying frames, attack) from sprite atlases, including mirrored frames. No character paths or glow filters run in the frame loop. System reduced-motion preference disables pose playback. Pausing freezes the simulation/animation clock. Rendering targets 60 FPS with corrected frame pacing and drops to 30 if measured draw submission cost exceeds the budget. Simulation remains at 60 Hz. Canvas pixel density is capped at 1.5 and 1.8 million backing pixels, dropping to 1× for crowded fights. Terrain has a separate canvas and redraws only when camera position, viewport size, or realm changes. Render lists and collision buckets are reused. CSS transitions remain disabled.
 
 ## Seven classes
 
@@ -114,6 +114,7 @@ node scripts/renderer-test.mjs
 node scripts/spatial-test.mjs
 node scripts/effects-test.mjs
 node scripts/art-test.mjs
+node scripts/worlds-test.mjs
 node scripts/performance-bench.mjs
 ```
 
@@ -123,6 +124,7 @@ Checks cover all seven class attacks, unique ranked pets, buffed pet damage, fix
 
 - `dist/engine.mjs`: deterministic combat, classes, passives, pets, elite aspects, and encounter director.
 - `dist/effects.mjs`: recycled, rate-limited visual effects with reserved capacity for class casts.
+- `dist/worlds.mjs`: ten terrain/material sets, distinct obstacle models, bounded three-map cache, next-scene idle prewarming, and subtle pixel accents.
 - `dist/render.mjs`: cached illustrated animation atlases, terrain layer, melee reach circles, warning geometry, projectiles, adaptive resolution, and overhead health.
 - `dist/heroes.mjs`: detailed class-specific models baked into mirrored movement and attack atlases.
 - `dist/pixel-effects.mjs`: six-frame pixel burst atlases, shared across casts, impacts, and deaths.
@@ -157,3 +159,26 @@ Effects now include six-frame pixel sparks, embers, frost stars, holy glints, de
 Assassin’s starting expected basic DPS fell from about 127 to 85 before enemy defenses and passives. Movement fell from 255 to 235, dodge from 25% to 18%, and kill healing from 0.2 to 0.1. Shadowstep changed from 550% / 8s / 0.8s safety to 400% / 10s / 0.6s safety. HP and melee reach are unchanged. Menu perks and ability descriptions match the new values.
 
 The pixel update’s crowded browser sample held 96 enemies, 219 hostile shots, and 32 effects, averaging 0.17 ms simulation and 2.14 ms draw submission. A 15,000-step Node run measured 1329 ms against 1383 ms before this update; these samples show no simulation regression, but are not a guarantee of display FPS.
+
+## Ten realms and entirely pixel effects
+
+Every 60 seconds of survival, the environment changes. Menus, pause, hidden tabs, and level-up decisions stop that clock. The compact HUD names the current realm and counts down to the next. After ten minutes, the cycle repeats while enemy difficulty continues growing.
+
+| Survival minute | Realm | Obstacle models / subtle ambient detail |
+|---|---|---|
+| 0 | The Hollow Wood | Original forest terrain and mossy rock piles |
+| 1 | The Sunken Dunes | Sand ripples and carved sandstone obelisks |
+| 2 | The Ember Depths | Cracked volcanic floor and basalt braziers with small pixel flames |
+| 3 | The Celestial Garden | Pearl tiles and winged marble columns with quiet golden glints |
+| 4 | The Frostbound Reach | Fractured ice and faceted frozen spires with occasional ice glints |
+| 5 | The Mireglow Marsh | Dark pools, hollow trunks, fungi, and sparse firefly pixels |
+| 6 | The Amethyst Hollows | Cavern stone and violet geodes with tiny crystal glints |
+| 7 | The Crimson Grove | Leaf litter and copper-leaved trees with a few falling leaf pixels |
+| 8 | The Astral Expanse | Star-speckled ground and suspended moonstone formations with twinkles |
+| 9 | The Clockwork Ruins | Riveted slabs and brass gear columns with small indicator pixels |
+
+Models retain shaded faces and detail. Every runtime combat effect now uses pixel rectangles or nearest-neighbor pixel textures: ability rings, explosions, lightning, melee/claw trails, shield/protection/freeze/stun outlines, orbital blades, projectile-slow fields, enemy warning zones and aim paths, and all projectiles. Physical class and monster models stay illustrated. The hero still has its red damage tint. Ambient accents use at most 30 tiny rectangles around the six obstacles, update at 4 Hz, and freeze under reduced motion. They add no particle entities.
+
+Realm changes replace artwork only. Arena walls, all six obstacle centers/radii, entity positions, health, build, attack timers, boss timing, and spawn budget stay consistent. Map textures are generated once and kept in a three-map LRU cache (roughly 16 MB of RGBA map data); the next scene is prewarmed during browser idle time. The terrain canvas remains cached while only low-contrast pixel accents animate on the foreground layer.
+
+A crowded Hell browser sample with 96 enemies, 219 hostile shots, and 32 active effects averaged 0.18 ms simulation and 2.29 ms draw submission. The 15,000-step Node simulation benchmark measured 1336 ms. Timings are CPU samples, not display FPS guarantees. Tests cover all ten terrain and obstacle designs, exact minute boundaries, cycling, pause behavior, unchanged collisions, bounded scene cache, reduced motion, terrain invalidation/reuse, and the absence of curved-path runtime effects.

@@ -1,4 +1,4 @@
-import {effect,updateEffects} from './effects.mjs?v=ember-9';
+import {effect,updateEffects} from './effects.mjs?v=ember-10';
 export const MAP = {left:-700,right:700,top:-490,bottom:490,name:'The Hollow Wood',obstacles:[{x:-300,y:-170,r:45},{x:310,y:180,r:48},{x:-370,y:300,r:42},{x:380,y:-300,r:44},{x:0,y:-350,r:38},{x:70,y:355,r:36}]};
 export const categories = {physical:{name:'Combat',color:'#ecc18a'},fire:{name:'Fire',color:'#ff977a'},frost:{name:'Frost',color:'#91d7f4'},lightning:{name:'Lightning',color:'#f2dc7a'},vitality:{name:'Vitality',color:'#f1a7b7'},nature:{name:'Nature',color:'#abd68a'},arcane:{name:'Arcane',color:'#9ed6c8'},companion:{name:'Companion',color:'#c6aff1'}};
 export const classes = [
