@@ -1,4 +1,5 @@
-import {MAP,classes} from './engine.mjs?v=ember-8';
+import {paintHero} from './heroes.mjs?v=ember-9';
+import {MAP,classes} from './engine.mjs?v=ember-9';
 const TAU=Math.PI*2;
 const hash=(x,y)=>{let n=Math.imul(x,374761393)+Math.imul(y,668265263);n^=n>>>13;return(Math.imul(n,1274126177)>>>0)/4294967296};
 function ellipse(c,x,y,rx,ry,fill,stroke){c.beginPath();c.ellipse(x,y,Math.max(.01,rx),Math.max(.01,ry),0,0,TAU);if(fill){c.fillStyle=fill;c.fill()}if(stroke){c.strokeStyle=stroke;c.stroke()}}
@@ -45,6 +46,7 @@ function pet(c,p,g,clock){const target=g.enemies.find(e=>e.id===p.targetId),dir=
 
 // Four poses are baked into atlases ahead of playback; no character paths run in the frame loop.
 export function paintIllustration(c,kind,color,frame=0){const phase=frame===1?Math.PI/2:frame===2?Math.PI*1.5:0,attack=frame===3?.18:frame===4?.36:frame===5?.07:0,clock=frame===1?.13:frame===2?.38:0;
+ if(classes.some(cl=>cl.id===kind)){paintHero(c,kind,color,frame);return}
  if(['wolf','stormpet','frostpet','firepet'].includes(kind)){pet(c,{kind,walk:phase,cooldown:attack?1:0,targetId:null},{enemies:[]},clock);return}
  if(['healerpet','slowpet','guardianpet'].includes(kind)){
   const wing=frame===1?3:frame===2?-3:0;const tint=kind==='healerpet'?'#c3ecc4':kind==='slowpet'?'#b8cce9':'#edd89d';

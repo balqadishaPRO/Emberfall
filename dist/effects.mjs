@@ -7,6 +7,7 @@ export function effect(g,kind,x,y,r=20,color='#ffe4ac',x2=x,y2=y,important=false
  if(g.effects.length>=EFFECT_LIMIT||(!important&&(g.effects.length>=limit||s.tokens<1)))return;
  if(kind==='ring'&&g.effects.some(e=>e.kind===kind&&e.color===color&&e.max-e.life<.09&&(e.x-x)**2+(e.y-y)**2<1600))return;
  const e=s.free.pop();if(!e)return;if(!important)s.tokens--;
- Object.assign(e,{kind,x,y,r,color,x2,y2,life:kind==='bolt'?.16:kind==='spark'?.14:.32,max:kind==='bolt'?.16:kind==='spark'?.14:.32});g.effects.push(e);
+ const duration=kind==='bolt'?.18:kind==='muzzle'?.14:kind==='spark'?.22:kind==='death'?.42:kind==='cast'?.45:.36;
+ Object.assign(e,{kind,x,y,r,color,x2,y2,life:duration,max:duration});g.effects.push(e);
 }
 export function updateEffects(g,dt){const s=state(g);s.tokens=Math.min(16,s.tokens+60*dt);let n=0;for(const e of g.effects){e.life-=dt;if(e.life>0)g.effects[n++]=e;else s.free.push(e)}g.effects.length=n}

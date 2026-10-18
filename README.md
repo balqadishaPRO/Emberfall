@@ -27,7 +27,7 @@ Deploy `dist/` on a static host that serves `.mjs` as JavaScript. The optional G
 - 1–3 / click / tap: choose a level-up card. 1–7 select a class in the menu.
 - Leaving the tab pauses the run. Opening the guide, audio settings, or build also pauses.
 
-The compact top-right panel holds health, XP, level, time, kills, a small elite countdown, and the active button. A ready ultimate has a saturated class color, bright border, and larger icon; it does not pulse or animate. Hover over the clock for wave and difficulty budget. Boss/miniboss names and health bars appear above their heads. There is no bottom dock, top-center counter strip, minimap, particle system, floating damage text, screen shake, or particle swarms. Melee classes have a transparent primary attack-range circle that follows reach and area upgrades.
+The compact top-right panel holds health, XP, level, time, kills, a small elite countdown, and the active button. A ready ultimate has a saturated class color, bright border, and larger icon; it does not pulse or animate. Hover over the clock for wave and difficulty budget. Boss/miniboss names and health bars appear above their heads. There is no bottom dock, top-center counter strip, minimap, floating damage text, screen shake, or particle swarms. A 32-unit basic attack cooldown bar sits directly above each class’s head, filling amber and turning pale green when ready. Melee classes have a transparent primary attack-range circle that follows reach and area upgrades.
 
 The renderer plays four baked illustrated poses (idle, two walking/flying frames, attack) from sprite atlases, including mirrored frames. No character paths or glow filters run in the frame loop. System reduced-motion preference disables pose playback. Pausing freezes the simulation/animation clock. Rendering targets 60 FPS with corrected frame pacing and drops to 30 if measured draw submission cost exceeds the budget. Simulation remains at 60 Hz. Canvas pixel density is capped at 1.5 and 1.8 million backing pixels, dropping to 1× for crowded fights. Terrain has a separate canvas and redraws only when camera position or size changes. Render lists and collision buckets are reused. CSS transitions remain disabled.
 
@@ -37,7 +37,7 @@ The renderer plays four baked illustrated poses (idle, two walking/flying frames
 |---|---|---|
 | Archer | 100 HP, 340 range, one extra piercing target | Scattershot: 9 arrows, 150% weapon damage each, shotgun fan, fixed 360-unit travel limit and fixed 5s cooldown |
 | Fighter | 130 HP, 20% damage reduction, broad melee attacks | Iron cyclone: repeated area strikes for 2s, 40% additional damage reduction; 14s cooldown |
-| Assassin | 95 HP, 255 speed, 0.30s attack interval, 100 melee range, 25% dodge, 40% crit, 230% crit multiplier | Shadowstep: dash through enemies for 550% weapon damage, 0.8s invulnerability; 8s cooldown |
+| Assassin | 95 HP, 23 damage, 235 speed, 0.36s attack interval, 100 melee range, 18% dodge, 30% crit, 210% crit multiplier | Shadowstep: dash through enemies for 400% weapon damage, 0.6s invulnerability; 10s cooldown |
 | Mage | 90 HP, explosive primary bolts, burning, +20% elemental damage | Glacial nova: 230% elemental damage, freezing, projectile removal; 16s cooldown |
 | Tank | 200 HP, 40% damage reduction, 30-point rechargeable shield, area shield bashes | Bastion: 240% damage in a 185-unit area, shield refill, 60% extra damage reduction for 4s; 16s cooldown |
 | Healer | 110 HP, radiant splash bolts, steady 0.25 HP/s self-recovery | Sanctuary: restore 12 HP, 210% damage in a 200-unit area, slow foes, remove nearby shots; 18s cooldown |
@@ -113,6 +113,7 @@ node scripts/indie-test.mjs
 node scripts/renderer-test.mjs
 node scripts/spatial-test.mjs
 node scripts/effects-test.mjs
+node scripts/art-test.mjs
 node scripts/performance-bench.mjs
 ```
 
@@ -123,6 +124,8 @@ Checks cover all seven class attacks, unique ranked pets, buffed pet damage, fix
 - `dist/engine.mjs`: deterministic combat, classes, passives, pets, elite aspects, and encounter director.
 - `dist/effects.mjs`: recycled, rate-limited visual effects with reserved capacity for class casts.
 - `dist/render.mjs`: cached illustrated animation atlases, terrain layer, melee reach circles, warning geometry, projectiles, adaptive resolution, and overhead health.
+- `dist/heroes.mjs`: detailed class-specific models baked into mirrored movement and attack atlases.
+- `dist/pixel-effects.mjs`: six-frame pixel burst atlases, shared across casts, impacts, and deaths.
 - `dist/illustrations.mjs`: the original organic terrain and detailed character/companion art, rasterized only when creating cached textures.
 - `dist/survival.mjs`: menu, compact HUD, decisions, controls, guide, audio settings, and records.
 - `dist/audio.mjs`: original music and combat synthesis.
@@ -144,3 +147,13 @@ Shapeshifter claw attacks have separate cached wind-up, strike, and recovery pos
 Class actives, area passives, elemental explosions, lightning chains, companion hits, elite absorption, guardian sacrifice, and level-up protection have brief colored feedback. Effect objects are recycled from a fixed 32-object pool. Normal effects admit at most 24 at once, falling to 12 above 64 enemies, with a 60-per-second token budget and duplicate pulse suppression. Reserved capacity keeps class casts visible. Effects expire on the simulation clock, freeze during pause, and never consume gameplay randomness. Offscreen effects are culled; reduced motion removes pulse expansion and claw trails. There are no particle swarms, runtime gradients, filters, or screen shake.
 
 A 15,000-step Node sample measured 1324 ms before and 1356 ms after adding effects (about 2% overhead). A browser stress scene with 96 enemies, 219 hostile shots, and deliberately saturated effects stayed at the 32-effect ceiling; average simulation CPU time was 0.28 ms and average draw submission 2.41 ms in that run. These measurements are machine-dependent CPU timings, not display FPS guarantees.
+
+## Detailed models and pixel feedback
+
+All seven classes have separate silhouettes and layered equipment: Archer quiver/longbow/forest cloak, Fighter plume/plate/greatsword, Assassin scarf/mask/twin daggers, Mage pointed hat/embroidered robe/crystal staff, Tank reinforced armor/tower shield, Healer halo/ceremonial vestments/dawn staff, and Shapeshifter antlers/fur wraps/feral claws. Details are baked into existing sprite atlases once; walking, attack poses, mirrored facing, inherited colors, and red damage masks remain cached.
+
+Effects now include six-frame pixel sparks, embers, frost stars, holy glints, death fragments, damage bursts, and cast flashes. Large ability pulses have pixel fragments along the rim; lightning has pixel impacts, and Shadowstep leaves a short segmented trail. A local burst is a single draw call; all its particles share one atlas. The 32-object pool, 60-event/s token limit, offscreen culling, reduced motion, and lower crowded-scene limits still apply. Bursts last 0.14–0.45 seconds. No individually simulated particles are added.
+
+Assassin’s starting expected basic DPS fell from about 127 to 85 before enemy defenses and passives. Movement fell from 255 to 235, dodge from 25% to 18%, and kill healing from 0.2 to 0.1. Shadowstep changed from 550% / 8s / 0.8s safety to 400% / 10s / 0.6s safety. HP and melee reach are unchanged. Menu perks and ability descriptions match the new values.
+
+The pixel update’s crowded browser sample held 96 enemies, 219 hostile shots, and 32 effects, averaging 0.17 ms simulation and 2.14 ms draw submission. A 15,000-step Node run measured 1329 ms against 1383 ms before this update; these samples show no simulation regression, but are not a guarantee of display FPS.

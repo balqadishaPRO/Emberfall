@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {createGame,classes,step,activate,summonPet} from '../dist/engine.mjs';
-import {effect,updateEffects,EFFECT_LIMIT} from '../dist/effects.mjs?v=ember-8';
+import {effect,updateEffects,EFFECT_LIMIT} from '../dist/effects.mjs?v=ember-9';
 const game=(id='archer')=>{const g=createGame(91,id);g.status='playing';g.spawn=-1e6;g.stats.evade=0;return g};
 const hit=g=>{g.enemyBullets.push({x:g.x,y:g.y,vx:0,vy:0,life:1,damage:10,kind:'arrow',r:7});step(g,1/60)};
 for(const c of classes){const g=game(c.id);g.shield=0;hit(g);assert.ok(g.hitFlash>0,c.id);assert.ok(g.health<g.stats.maxHealth);activate(g);assert.ok(g.effects.some(e=>e.kind==='cast'||e.kind==='dash'),c.id+' active has visible feedback')}
