@@ -1,0 +1,10 @@
+import assert from 'node:assert/strict';
+import {createGame,spawnEnemy,summonPet,monsters} from '../dist/engine.mjs';
+let canvasCount=0;const mainCalls=[];
+function context(log=[]){return new Proxy({},{get:(o,key)=>key in o?o[key]:(...args)=>{log.push([key,...args.map(a=>typeof a==='object'?a?.tag: a)])},set:(o,key,value)=>(o[key]=value,true)})}
+globalThis.document={createElement(){const tag=++canvasCount,c=context();return{tag,width:0,height:0,getContext:()=>c}}};globalThis.devicePixelRatio=2;
+const c=context(mainCalls),canvas={getContext:()=>c,getBoundingClientRect:()=>({width:1280,height:800})};
+const {Renderer}=await import('../dist/render.mjs');const r=new Renderer(canvas),g=createGame(19,'shapeshifter');g.status='paused';
+let i=0;for(const kind of Object.keys(monsters))spawnEnemy(g,kind,{x:(i++%5-2)*110,y:Math.floor((i-1)/5)*100-120});for(const kind of ['wolf','stormpet','frostpet','firepet','healerpet','slowpet','guardianpet'])summonPet(g,kind);
+r.draw(g);const first=JSON.stringify(mainCalls),cache=canvasCount;mainCalls.length=0;g.time=999;g.walk=100;g.attackAnim=.2;g.hitFlash=.4;for(const e of g.enemies){e.walk=77;e.attackAnim=.2}r.draw(g);assert.equal(JSON.stringify(mainCalls),first,'clock and cosmetic state cannot animate sprites or world');assert.equal(canvasCount,cache,'sprite textures are reused');assert.ok(mainCalls.some(call=>call[0]==='fillText'&&call[1]==='The Stone Warden'),'boss HP name is over its head');assert.ok(!mainCalls.some(call=>['createRadialGradient','strokeText','bezierCurveTo'].includes(call[0])));assert.equal(c.imageSmoothingEnabled,false);assert.equal(r.dpr,1.5);
+console.log('Renderer checks passed: static frames despite changing clocks, cached pixel sprites, no glow/particle paths, reduced pixel ratio, and overhead boss health.');

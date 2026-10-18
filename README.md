@@ -1,6 +1,6 @@
 # Emberfall — The Hollow Wood
 
-A fullscreen, single-player 2D browser survival game. Choose Archer, Fighter, Assassin, or Mage; survive an escalating horde in a finite 1400 × 980 arena. Every kill grants immediate XP. Each level freezes the game and offers three distinct, stacking passives.
+A lightweight, fullscreen, solo 2D survival game for the browser. Seven classes fight an escalating horde inside a bounded 1400 × 980 arena. Kills grant XP immediately; every level pauses combat and offers three eligible passive upgrades. Choosing grants two seconds of protection.
 
 ## Run
 
@@ -10,115 +10,91 @@ Node.js 18+, no dependencies or build step:
 node scripts/serve.mjs
 ```
 
-Open http://127.0.0.1:8080. Use a different port in PowerShell if another server is already running:
+Open http://127.0.0.1:8080. For a different port in PowerShell:
 
 ```powershell
-$env:PORT = '8082'
+$env:PORT = '8084'
 node scripts/serve.mjs
 ```
 
-Deploy `dist/` on any static host that serves `.mjs` as JavaScript. The optional Go server also works: `go run ./cmd/server`. Restart an existing server after source changes.
+Deploy `dist/` on a static host that serves `.mjs` as JavaScript. The optional Go server also works with `go run ./cmd/server`. The earlier Go micro-RTS prototype is preserved at `/micro-command.html`, along with its Go/WebAssembly source and assets.
 
-## Controls and interface
+## Controls and compact interface
 
-- WASD / arrows: move. On touch screens, drag the arena to use a movement stick.
-- Primary attacks fire automatically. Fighter and Assassin strike in melee; Archer and Mage attack at range.
-- Space or the circular ability button: use your unique class active. The ring and timer show cooldown.
-- P / Esc or the pause button: pause/resume. Leaving the tab pauses automatically.
-- 1–3 or click/tap: choose one of the three level-up cards.
-- F or Fullscreen: toggle browser fullscreen. Starting a run requests fullscreen when the browser supports it; the game always fills the window.
-- B, View build, or a passive icon: inspect your build in a paused, readable panel.
-- Field guide: all 54 abilities, all 14 monsters, XP rewards, boss patterns, and controls.
-- Sound: optional synthesized audio.
+- WASD / arrows: move. Drag the arena on touch screens.
+- Attacks are automatic. Space or the colored active button uses your class ultimate.
+- P / Escape: pause. B: inspect your build. F: fullscreen. M: mute.
+- 1–3 / click / tap: choose a level-up card. 1–7 select a class in the menu.
+- Leaving the tab pauses the run. Opening the guide, audio settings, or build also pauses.
 
-A centered combat dock shows health, shield, XP, recent passives, and the class active with cooldown. Health loss has an immediate red pulse and a trailing damage bar. Kills, survival time, wave, level, and the next elite countdown appear above the arena. Active elites have named health bars. The minimap shows the finite arena, stone ruins, enemies, elites, hero, and camera viewport. Walls and ruins block movement. The longest survival is saved locally when browser storage is available.
+The compact top-right panel holds health, XP, level, time, kills, a small elite countdown, and the active button. A ready ultimate has a saturated class color, bright border, and larger icon; it does not pulse or animate. Hover over the clock for wave and difficulty budget. Boss/miniboss names and health bars appear above their heads. There is no bottom dock, top-center counter strip, minimap, particle system, floating damage text, screen shake, walking cycle, or attack animation.
 
-## Classes
+The renderer uses cached, static pixel sprites and a cached terrain image. Movement, projectiles, charge paths, and warning areas remain part of combat. There are no cosmetic animation allocations. Rendering is capped at 30 FPS while deterministic simulation runs at 60 Hz; paused/menu scenes redraw only on status or size changes. Canvas pixel density is capped at 1.5. CSS transitions and animations are disabled.
 
-| Class | Primary weapon | Starting perks |
+## Seven classes
+
+| Class | Starting features | Space active |
 |---|---|---|
-| Archer | Longbow | 340 range, pierces one foe, +10% movement speed |
-| Fighter | Greatsword | Wide melee attacks, 130 health, 20% damage reduction |
-| Assassin | Twin daggers | Fast melee, 25% critical chance, +15% speed, 0.2 health per kill |
-| Mage | Ember staff | Explosive fireballs, burning, +20% elemental damage |
+| Archer | 100 HP, 340 range, one extra piercing target | Scattershot: 9 arrows, 150% weapon damage each, shotgun fan, fixed 360-unit travel limit and fixed 5s cooldown |
+| Fighter | 130 HP, 20% damage reduction, broad melee attacks | Iron cyclone: repeated area strikes for 2s, 40% additional damage reduction; 14s cooldown |
+| Assassin | 95 HP, 255 speed, 0.30s attack interval, 100 melee range, 25% dodge, 40% crit, 230% crit multiplier | Shadowstep: dash through enemies for 550% weapon damage, 0.8s invulnerability; 8s cooldown |
+| Mage | 90 HP, explosive primary bolts, burning, +20% elemental damage | Glacial nova: 230% elemental damage, freezing, projectile removal; 16s cooldown |
+| Tank | 200 HP, 40% damage reduction, 30-point rechargeable shield, area shield bashes | Bastion: 240% damage in a 185-unit area, shield refill, 60% extra damage reduction for 4s; 16s cooldown |
+| Healer | 110 HP, radiant splash bolts, steady 0.25 HP/s self-recovery | Sanctuary: restore 12 HP, 210% damage in a 200-unit area, slow foes, remove nearby shots; 18s cooldown |
+| Shapeshifter | 70 HP and weak claws; permanently inherits every elite kill | Primal surge: 200% damage and a brief stun in a 175-unit area; 12s cooldown |
 
-## Class actives
+Cooldowns pause during decisions and reset for a new run. Directional actives prioritize current movement, then a nearby target. Ultimate data is separate from the passive pool. Class-only upgrades never appear for another class. Archer's Endless quiver now upgrades Scattershot damage, keeping its 5s cooldown and 360 range fixed.
 
-Use Space or tap the circular ability button. Movement direction takes priority for directional skills; otherwise they aim toward a nearby enemy. Cooldowns freeze while paused or choosing upgrades. Starting a new run resets them.
+## Shapeshifter inheritance
 
-| Class | Active | Cooldown |
-|---|---|---:|
-| Archer | Piercing volley: 9 arrows dealing 150% weapon damage, piercing 4 additional enemies | 10s |
-| Fighter | Iron cyclone: strike nearby foes for 2 seconds and take 40% less damage | 14s |
-| Assassin | Shadowstep: a short invulnerable dash that cuts through foes and respects walls and ruins | 8s |
-| Mage | Glacial nova: freeze and damage nearby enemies; erase nearby hostile projectiles | 16s |
+Each miniboss or boss kill grants an automatic permanent aspect, including kills made by pets or status damage. Repeated kills add another rank. Every elite absorption also multiplies weapon damage by 1.15 and flat ability power by 1.1. The most recent aspect changes the static hero palette; the build panel lists inherited ranks.
 
-## Combat and recovery balance
+| Elite | Inherited passive |
+|---|---|
+| Thorn Ravager | +8% movement speed, +5% crit, periodic close-area predatory strike |
+| Broodmother | Poisonous direct hits, periodic venom pulse |
+| Mire Hexer | Periodic area curse that damages and slows clustered enemies |
+| Stone Warden | 15% less incoming damage, +20 maximum HP, stunning ground slams |
+| Frost Revenant | Chilling direct hits and freezing novas |
+| Ashen Dragon | Burning direct hits, flame aura, extra explosive fireballs |
 
-Enemies have higher health, movement speed, and damage. Enemy health and damage scale with elapsed time. Waves spawn faster; ranged and special enemies unlock earlier. Primary hero damage and attack frequency are reduced. Melee enemies wind up before striking; archers and spitters aim before releasing projectiles.
+## Seven unique companions
 
-- Second wind: **0.2 HP/s per rank**, capped at **1 HP/s**. Requires **6 seconds without taking damage**.
-- Blood pact: **0.15 HP per kill per rank**. Sustained kill-healing is limited to **0.8 HP/s**, with a maximum 0.8-point burst budget.
-- Iron heart: +20 maximum health and 10 immediate healing per rank, capped at 5 ranks.
-- Fresh resolve: 6 healing per rank on acquisition and future level-ups, capped at 3 ranks.
-- Ember ward: 15 shield per rank, capped at 4 ranks. Recharge is 2 points/s after 8 seconds without damage.
-- Stone skin: 8% damage reduction per rank, capped at 5 ranks.
+Each kind can exist at most once. Selecting the same combat pet again upgrades that same object; it never creates a duplicate. Combat pets keep independent targets, preferring alternatives to the hero's target, and cannot take ordinary enemy damage.
 
-Hostile projectiles have bright white cores, saturated colors, and long luminous trails: hot-pink arrows, orange-red fire, cyan ice, and neon-green poison. Ground warnings pulse and carry labels. Hits produce visible health-loss numbers, red impact bursts, a screen-edge flash, and a brief camera shake. Reduced-motion preferences disable the shake.
+| Companion | Function and ranks |
+|---|---|
+| Moonfang | Wolf bites for 120% weapon damage; up to 5 ranks |
+| Storm sprite | Lightning chains through 3 targets for 100% weapon damage; up to 5 ranks |
+| Frost owl | Freezing shards for 100% weapon damage; up to 5 ranks |
+| Cinder drake | Explosive fireballs for 120% weapon damage plus burning; up to 5 ranks |
+| Dew sprite | Exactly 0.1 HP/s, no attacks, one rank. Pet damage/haste bonuses cannot amplify healing |
+| Hourglass moth | Slow hostile projectiles by 35% within 145 units of the hero. Up to 3 ranks: +25 radius and +10% slowing each, capped at 55% |
+| Lastlight | No attacks. Absorbs one otherwise fatal hit and is sacrificed. One second of safety prevents immediate follow-up death. Cannot be summoned again that run |
 
-Characters are drawn as articulated shapes, not static pixel grids. Legs walk, wings flap, weapons swing and recoil, spellcasters raise their hands and staff, enemies flash and recoil on damage, and defeated humanoids collapse and fade. Rocks use irregular faceted shapes instead of blocks.
+Combat pets use at least 18 base weapon damage, improving usefulness for a weak starting Shapeshifter. Additional ranks add 45% of base damage, 6% faster attacks multiplicatively, and 12 movement speed. Global companion damage and haste upgrades remain available. A combat companion is guaranteed at the first level-up. Lastlight is not spent on ordinary nonfatal hits; its sacrifice preserves the hero's health against the blocked hit.
 
-## Pacing
+## Passive builds, AoE, and healing
 
-Waves last 30 seconds. Spawn pressure and monster health increase with elapsed time, with no final wave. Common enemies are limited to 380 for performance; scheduled elites can exceed this limit.
+There are 68 passives across Combat, Fire, Frost, Lightning, Vitality, Nature, Arcane, and Companion categories. All seven classes have exclusive passives. Each level-up offers an eligible class option while one remains, with distinct choices and capped upgrades removed at maximum rank.
 
-Minibosses rotate every 45 seconds:
+New common AoE choices include Wide impact (larger melee areas or projectile splash) and Pressure ring. Tank has Seismic shield area strikes. Healer has Consecration and larger Dawnfire explosions. Shapeshifter has wider claws, adaptation, and companion synergy, in addition to elite aspects. Existing melee cleaves, orbit blades, slams, frost novas, lightning chains, fire aura, and death bursts remain functional with static visual indicators.
 
-1. Thorn Ravager: telegraphed charges.
-2. The Broodmother: summons nightwings and spits venom.
-3. The Mire Hexer: delayed cursed pools.
+Second wind grants 0.2 HP/s per rank, capped at 1 HP/s, after six seconds without damage. Kill-healing is limited to a 0.8 HP/s token budget. Shields recharge at 2 points/s after eight seconds without damage. Healer's innate recovery is separate at 0.25 HP/s; Dew sprite remains fixed at 0.1 HP/s. Healing never exceeds maximum HP.
 
-Main bosses rotate every 120 seconds, starting at 02:00:
+## Encounters and spawn budget
 
-1. The Stone Warden: charges and wide ground slams.
-2. The Frost Revenant: radial ice volleys and freezing zones.
-3. The Ashen Dragon: fire volleys and persistent burning ground.
+Waves last 30 seconds. Minibosses rotate every 45 seconds: Ravager, Broodmother, Hexer. Main bosses rotate every 120 seconds: Warden, Frost Revenant, Dragon. Elite arrivals may wait for room in the enemy budget. Health, damage, and spawn pressure grow over time.
 
-The sequence repeats with stronger enemies. Dashed circles and charge paths warn of incoming attacks. Solid pools deal damage. Bosses resist knockback, stun, and freeze duration.
+Live enemy difficulty must fit `floor(18 + elapsedSeconds × 0.45)`. Costs: Hollow 1, Nightwing 1.5, Bone archer 3, Ironhide/Ram 4, Spitter/Wraith 5, Grave caller 7; minibosses 18/20/22; bosses 42/46/54. Summons, regular spawns, and elites use the same admission check. Death immediately frees points. A separate 96-enemy ceiling bounds late-game work.
 
-## Monster rewards
+The director reserves room before elites and prioritizes due bosses. It retains at most one pending boss and one pending miniboss. Blocked spawn credit is capped at 1.5, preventing catch-up floods. Heavier types gain more selection weight later. `spawnEnemy` is a low-level fixture constructor; production spawn paths use `trySpawnEnemy`.
 
-| Monster | Base XP |
-|---|---:|
-| Hollow | 3 |
-| Nightwing | 2 |
-| Ironhide | 9 |
-| Bone archer | 6 |
-| Blight spitter | 8 |
-| Briar ram | 7 |
-| Grave caller | 12 |
-| Pale wraith | 10 |
-| Thorn Ravager | 45 |
-| The Broodmother | 50 |
-| The Mire Hexer | 55 |
-| The Stone Warden | 130 |
-| The Frost Revenant | 150 |
-| The Ashen Dragon | 180 |
+Fourteen enemy types have distinct XP rewards and attacks, shown in the field guide. Hostile arrows are pink, ice cyan, fire orange, and poison green. Outlined static warning zones, melee markers, and charge/aim lines show danger. Bosses resist crowd-control duration and knockback.
 
-XP bonuses multiply these rewards. Killing a monster with a companion or damage over time grants the same XP as a primary attack.
+## Audio
 
-## Abilities and companions
-
-54 passives across Combat, Fire, Frost, Lightning, Vitality, Nature, Arcane, and Companion categories. Colors and text labels identify each school. Upgrade descriptions use 16px text on desktop and 14px on narrow screens; guide descriptions use 14–15px. Capped passives stop appearing at their maximum rank. Twelve additional class-exclusive upgrades add barrages, distant-hit bonuses, cooldown reduction, crowd defense, stun roars, longer cyclones, poison, shadow strikes, kill-driven dash recharge, frozen-target damage, and comets. Each level-up guarantees an eligible class-specific option until those upgrades are exhausted. Every class can acquire secondary weapons, elemental spells, melee abilities, and companions. A companion is guaranteed among the first level-up choices.
-
-Four companion types can be summoned up to three times each. They choose and retain their own targets, preferring alternatives to the hero's current target. Companions are invulnerable spirits:
-
-- Moonfang: a wolf that pursues foes and bites in melee.
-- Storm sprite: chains lightning through multiple targets.
-- Frost owl: fires freezing shards.
-- Cinder drake: launches explosive fireballs that burn.
-
-Melee options include Spectral cleaver, Warden's ring, Earthshatter, Crushing force, Briar armor, and Vengeful spirit. Elemental builds support burning, poison, slow, freeze, stun, chain lightning, and death explosions. Shielding, healing, evasion, critical hits, and companion buffs provide additional build paths.
+Original procedural ambient music and synthesized bow, melee, spell, hit, kill, active, level, death, and boss cues. Music begins after interaction. Audio settings have separate saved music/effect volumes and master mute. Hidden tabs suspend audio; a player action resumes it. Voice and cue rate limits bound audio work. There are no third-party audio downloads.
 
 ## Verification
 
@@ -126,52 +102,24 @@ Melee options include Spectral cleaver, Warden's ring, Earthshatter, Crushing fo
 node --check dist/engine.mjs
 node --check dist/render.mjs
 node --check dist/survival.mjs
+node --check dist/audio.mjs
 node scripts/survival-test.mjs
-node scripts/ui-smoke.mjs
 node scripts/combat-test.mjs
 node scripts/expansion-test.mjs
-node scripts/audio-test.mjs
 node scripts/director-test.mjs
+node scripts/audio-test.mjs
+node scripts/ui-smoke.mjs
+node scripts/indie-test.mjs
+node scripts/renderer-test.mjs
 ```
 
-Simulation checks cover all four class attacks, finite boundaries and obstacles, all XP rewards, distinct and eligible level-up choices, upgrade time freezing, independent companion targeting, companion attacks/statuses, hostile arrows, charges, each boss pattern, warned ground slams, freezing and burning, elite schedules, death, deterministic runs, and a ten-minute mixed build.
-
-The combat checks cover all four active abilities, cooldown and pause rules, cyclone damage reduction, dash collisions, nova projectile removal, regeneration delays and caps, kill-healing budgets, visible hit events, and idle-player survival pressure. The controller also verifies the active button, cooldown display, and reset on class changes.
-
-The controller smoke executes the real interface with a minimal DOM/canvas stand-in, checking class selection, class health, the HUD, colored upgrade cards, ability selection, paused build inspection, menu navigation, resetting a run, and the ability/monster guide. Browser QA checks the actual layout and controls separately.
+Checks cover all seven class attacks, unique ranked pets, buffed pet damage, fixed healer rates, non-compounding projectile slowdown, guardian sacrifice and permanent loss, shotgun travel/cooldown limits, Assassin stats and dash damage, Tank defenses/AoE, Healer splash/sustain, all six inherited aspects and repeated ranks, eligible choices, deterministic ten-minute runs, the enemy budget on every crowded-test step, audio routing/limits, compact UI behavior, static rendering despite clock changes, cached sprites, and overhead boss health. Browser QA checks actual desktop and phone layouts and runtime errors. Automated audio tests inspect signal graphs rather than perceived sound quality.
 
 ## Source
 
-- `dist/engine.mjs`: deterministic simulation, map, classes, monsters, passives, and companions.
-- `dist/render.mjs`: Canvas renderer, cached organic terrain, articulated illustrated characters, walking and attack animation, bright projectiles, combat effects, and minimap.
-- `dist/survival.mjs`: menu, HUD, upgrade cards, input, fullscreen, field guide, audio, and local records.
-- `dist/survival.css`: fullscreen and responsive interface.
-- `scripts/serve.mjs`: dependency-free local server.
-
-The earlier Go micro-RTS prototype remains at `/micro-command.html` with its Go source and WebAssembly assets. The survival game does not require Go.
-
-## Audio and decision feedback
-
-The arena is now 1400 × 980, with repositioned ruins and corner shrines: 61% less area than the original 2200 × 1600. Normal enemies spawn 380–540 units away before boundary clamping, with a 290-unit preferred safety distance. Spawn pressure and the boss clock continue increasing.
-
-Choosing an upgrade grants 2 seconds of protection from contact, projectiles, and ground hazards. A cyan ring, hero label, and HUD countdown communicate the safe window. Pausing or opening another upgrade stops that timer.
-
-An original procedural 88 BPM ambient score uses an eight-bar minor-key progression, plucked melody, bass, and a combat pulse. Bow, melee, spell, hit, kill, active, level-up, death, and boss cues use separate synthesis and noise envelopes. Audio starts after interaction, has bounded voices and rate-limited cues, suspends when the tab is hidden, and resumes through a player action. Audio settings pause the run and persist separate music/effect volumes and master mute. M is the quick mute shortcut. No third-party audio assets or network downloads are needed.
-
-UI updates include class-only labels in upgrade cards and the guide, NEW versus current-to-next rank labels, visible numbered selection keys, initial movement/ability hints, larger header targets, and readable audio controls. Colors continue to have text labels. The existing paused decisions, cooldown ring, health/XP grouping, and keyboard/touch controls are preserved.
-
-Design references: [Game Accessibility Guidelines: separate volume controls](https://gameaccessibilityguidelines.com/provide-separate-volume-controls-or-mutes-for-effects-speech-and-background-music/) informed independent music and effect sliders; [MDN Web Audio best practices](https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API/Best_practices) informed gesture-based initialization and explicit sound controls.
-
-Expansion checks exercise all 12 new upgrades and post-choice safety against shots and hazards, including expiration and pause behavior. Audio tests inspect score scheduling, signal routing, independent volume/mute persistence, every effect cue, rate/voice limits, and hidden-tab handling. Browser QA verifies the actual controls, labels, responsive layouts, and absence of runtime errors; automated audio graph tests do not establish perceived sound quality.
-
-## Budgeted encounters and crowded-fight performance
-
-Live enemy difficulty is limited to floor(18 + elapsed seconds × 0.45), displayed as THREAT used / available. Costs: Hollow 1, Nightwing 1.5, Bone archer 3, Ironhide and Briar ram 4, Blight spitter and Pale wraith 5, Grave caller 7; minibosses 18 / 20 / 22; bosses 42 / 46 / 54. Summons, regular spawns, and scheduled elites all pass through the same admission check. Killed enemies release their points immediately. The point limit grows indefinitely; a separate 96-enemy ceiling bounds simulation and rendering work. Enemy health and damage continue scaling after that ceiling.
-
-The director reserves some room before scheduled elite arrivals. If a due elite still cannot fit, it waits and the HUD says ELITE WAITING. Bosses get priority. At most one pending boss and one pending miniboss are retained; blocked spawn credit is limited to 1.5, preventing catch-up floods. Heavier enemy types gain additional selection weight later in the run. The low-level spawnEnemy scenario constructor is retained for isolated combat fixtures; production spawn paths use trySpawnEnemy.
-
-Pet illustrations render at 55% of their previous size. Space actives remain separate from talents, cannot appear in passive choices, and the field guide now separates the selected class active, class passives, and common passives.
-
-Decorative effects are bounded at 72 (48 in crowded fights), with per-step creation limits and nearby ring coalescing. Damage labels are sampled and bounded at 28 (18 when crowded); hero damage feedback takes priority. Combat calculations remain independent of visual sampling. Hostile shots and warning zones remain visible. The renderer caches reusable glow textures, culls off-screen hazards/projectiles/effects/labels, and removes expensive blur/filter work in crowded fights. Nearest-target searches compare squared distances.
-
-A repeatable two-minute crowded simulation at 10 minutes elapsed, seed 91, six orbit blades and multishot, improved from 403 peak enemies / 180 effects and about 2932 ms total simulation work to fewer than 96 enemies / 48 effects and about 720 ms on this machine. This is a simulation benchmark, not a browser FPS guarantee. Director checks verify the budget on every step, summon admission, elite deferral, the entity ceiling, bounded queues, and class-active exclusion.
+- `dist/engine.mjs`: deterministic combat, classes, passives, pets, elite aspects, and encounter director.
+- `dist/render.mjs`: cached static pixel art, terrain, warning geometry, projectiles, and overhead health.
+- `dist/survival.mjs`: menu, compact HUD, decisions, controls, guide, audio settings, and records.
+- `dist/audio.mjs`: original music and combat synthesis.
+- `dist/survival.css`: responsive layout without animations or transitions.
+- `scripts/serve.mjs`: dependency-free preview server.
