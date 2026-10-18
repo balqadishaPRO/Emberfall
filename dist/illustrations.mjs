@@ -1,4 +1,4 @@
-import {MAP,classes} from './engine.mjs?v=ember-7';
+import {MAP,classes} from './engine.mjs?v=ember-8';
 const TAU=Math.PI*2;
 const hash=(x,y)=>{let n=Math.imul(x,374761393)+Math.imul(y,668265263);n^=n>>>13;return(Math.imul(n,1274126177)>>>0)/4294967296};
 function ellipse(c,x,y,rx,ry,fill,stroke){c.beginPath();c.ellipse(x,y,Math.max(.01,rx),Math.max(.01,ry),0,0,TAU);if(fill){c.fillStyle=fill;c.fill()}if(stroke){c.strokeStyle=stroke;c.stroke()}}
@@ -44,7 +44,7 @@ function brute(c,phase,attack,color){const stride=Math.sin(phase)*4;for(const d 
 function pet(c,p,g,clock){const target=g.enemies.find(e=>e.id===p.targetId),dir=target&&target.x<p.x?-1:1;const phase=p.walk||0;const attack=p.cooldown>.5?.2:0;if(p.kind==='wolf'){c.save();c.scale(.85,.85);quadruped(c,'wolf',phase,attack,dir,'#bcd6b5');c.restore()}else if(p.kind==='firepet')dragon(c,clock,attack,dir,true);else if(p.kind==='frostpet'){const flap=Math.sin(clock*9),color='#c1e2e1';for(const d of [-1,1]){c.beginPath();c.moveTo(d*4,-12);c.quadraticCurveTo(d*16,-26+flap*10,d*25,-15+flap*12);c.lineTo(d*13,-3);c.closePath();c.fillStyle='#7aa9bc';c.fill()}ellipse(c,0,-10,9,12,color,'#4a7386');ellipse(c,0,-20,10,8,'#d9eef0','#597b8e');for(const d of [-1,1])circle(c,d*4,-21,2.5,'#33485c');shape(c,[[-2,-16],[2,-16],[0,-12]],'#cfb57b',null)}else{glow(c,0,-16,32,'#ffef95',.3);ellipse(c,0,-14+Math.sin(clock*4)*3,6,10,'#fff1ad','#b39c58');for(let i=0;i<3;i++){const a=clock*4+i/3*TAU;circle(c,Math.cos(a)*15,-16+Math.sin(a)*9,2,'#fff8d5')}circle(c,-2,-16,1,'#6e6d4c');circle(c,2,-16,1,'#6e6d4c')}}
 
 // Four poses are baked into atlases ahead of playback; no character paths run in the frame loop.
-export function paintIllustration(c,kind,color,frame=0){const phase=frame===1?Math.PI/2:frame===2?Math.PI*1.5:0,attack=frame===3?.18:0,clock=frame===1?.13:frame===2?.38:0;
+export function paintIllustration(c,kind,color,frame=0){const phase=frame===1?Math.PI/2:frame===2?Math.PI*1.5:0,attack=frame===3?.18:frame===4?.36:frame===5?.07:0,clock=frame===1?.13:frame===2?.38:0;
  if(['wolf','stormpet','frostpet','firepet'].includes(kind)){pet(c,{kind,walk:phase,cooldown:attack?1:0,targetId:null},{enemies:[]},clock);return}
  if(['healerpet','slowpet','guardianpet'].includes(kind)){
   const wing=frame===1?3:frame===2?-3:0;const tint=kind==='healerpet'?'#c3ecc4':kind==='slowpet'?'#b8cce9':'#edd89d';
@@ -62,7 +62,7 @@ export function paintIllustration(c,kind,color,frame=0){const phase=frame===1?Ma
  else{humanoid(c,kind,phase,attack,1,color,clock,0);
   if(kind==='tank'){ellipse(c,-15,-7,13,19,'#72969d','#314c4c');ellipse(c,-15,-7,9,14,'#9fb4ad','#c4caa0');line(c,[[-15,-19],[-15,5]],'#d4d7b6',2)}
   if(kind==='healer'){line(c,[[19,-47],[19,-36]],'#edfbd4',2.4);line(c,[[15,-42],[23,-42]],'#edfbd4',2.4)}
-  if(kind==='shapeshifter'){line(c,[[12,-8],[22,-19]],'#d8d4ba',2);line(c,[[15,-6],[25,-17]],'#d8d4ba',2);line(c,[[18,-4],[28,-15]],'#d8d4ba',2)}
+  if(kind==='shapeshifter'){const reach=frame===4?-5:frame===3?13:frame===5?8:0,lift=frame===4?-17:frame===3?0:frame===5?9:0;bone(c,[[7,-20],[17+reach,-15+lift],[21+reach,-9+lift]],color,5);for(let i=0;i<3;i++)line(c,[[18+reach+i*3,-10+lift+i*3],[29+reach+i*3,-23+lift+i*3]],'#f2e9cd',2)}
  }
 }
 export function paintProjectile(c,kind,color,hostile){

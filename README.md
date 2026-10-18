@@ -78,7 +78,7 @@ Combat pets use at least 18 base weapon damage, improving usefulness for a weak 
 
 There are 68 passives across Combat, Fire, Frost, Lightning, Vitality, Nature, Arcane, and Companion categories. All seven classes have exclusive passives. Each level-up offers an eligible class option while one remains, with distinct choices and capped upgrades removed at maximum rank.
 
-New common AoE choices include Wide impact (larger melee areas or projectile splash) and Pressure ring. Tank has Seismic shield area strikes. Healer has Consecration and larger Dawnfire explosions. Shapeshifter has wider claws, adaptation, and companion synergy, in addition to elite aspects. Existing melee cleaves, orbit blades, slams, frost novas, lightning chains, fire aura, and death bursts remain functional with static visual indicators.
+New common AoE choices include Wide impact (larger melee areas or projectile splash) and Pressure ring. Tank has Seismic shield area strikes. Healer has Consecration and larger Dawnfire explosions. Shapeshifter has wider claws, adaptation, and companion synergy, in addition to elite aspects. Existing melee cleaves, orbit blades, slams, frost novas, lightning chains, fire aura, and death bursts use brief colored pulses, impact sparks, and lightning traces.
 
 Second wind grants 0.2 HP/s per rank, capped at 1 HP/s, after six seconds without damage. Kill-healing is limited to a 0.8 HP/s token budget. Shields recharge at 2 points/s after eight seconds without damage. Healer's innate recovery is separate at 0.25 HP/s; Dew sprite remains fixed at 0.1 HP/s. Healing never exceeds maximum HP.
 
@@ -112,6 +112,7 @@ node scripts/ui-smoke.mjs
 node scripts/indie-test.mjs
 node scripts/renderer-test.mjs
 node scripts/spatial-test.mjs
+node scripts/effects-test.mjs
 node scripts/performance-bench.mjs
 ```
 
@@ -120,6 +121,7 @@ Checks cover all seven class attacks, unique ranked pets, buffed pet damage, fix
 ## Source
 
 - `dist/engine.mjs`: deterministic combat, classes, passives, pets, elite aspects, and encounter director.
+- `dist/effects.mjs`: recycled, rate-limited visual effects with reserved capacity for class casts.
 - `dist/render.mjs`: cached illustrated animation atlases, terrain layer, melee reach circles, warning geometry, projectiles, adaptive resolution, and overhead health.
 - `dist/illustrations.mjs`: the original organic terrain and detailed character/companion art, rasterized only when creating cached textures.
 - `dist/survival.mjs`: menu, compact HUD, decisions, controls, guide, audio settings, and records.
@@ -134,3 +136,11 @@ The illustrated visual style is restored from the earlier forest version. All se
 The simulation reuses numeric spatial buckets instead of rebuilding string-keyed Maps every tick. Projectile hits use squared swept-distance checks; collection removal compacts arrays in place. Companion target IDs use a reusable lookup. Obstacle and area/orbit checks avoid unnecessary square roots. Melee target acquisition and its visible circle share the same primaryRange function.
 
 In a synchronous browser CPU benchmark at 1280 × 720, with 96 enemies and 219 hostile shots, the previous renderer averaged 2.29 ms per draw (p95 10.50 ms). With animation enabled, the updated renderer averaged 1.42 ms (p95 2.30 ms) in the same scenario. Average simulation time was 0.28 ms before and 0.27 ms after in that short browser sample. A separate 15,000-step Node profile fell from about 1553 ms total to 1250 ms. Timings depend on the machine and are CPU/submission measurements, not display FPS guarantees. The old fixed 30 FPS gate was also replaced with a cadence that preserves fractional frame time and targets smooth 60 FPS.
+
+## Combat feedback and effect budget
+
+Shapeshifter claw attacks have separate cached wind-up, strike, and recovery poses, plus three directional claw trails. A pre-baked red overlay flashes the hero for 0.24 seconds on actual health loss. Full shield blocks, dodges, invulnerability, level-up protection, and guardian saves do not trigger it.
+
+Class actives, area passives, elemental explosions, lightning chains, companion hits, elite absorption, guardian sacrifice, and level-up protection have brief colored feedback. Effect objects are recycled from a fixed 32-object pool. Normal effects admit at most 24 at once, falling to 12 above 64 enemies, with a 60-per-second token budget and duplicate pulse suppression. Reserved capacity keeps class casts visible. Effects expire on the simulation clock, freeze during pause, and never consume gameplay randomness. Offscreen effects are culled; reduced motion removes pulse expansion and claw trails. There are no particle swarms, runtime gradients, filters, or screen shake.
+
+A 15,000-step Node sample measured 1324 ms before and 1356 ms after adding effects (about 2% overhead). A browser stress scene with 96 enemies, 219 hostile shots, and deliberately saturated effects stayed at the 32-effect ceiling; average simulation CPU time was 0.28 ms and average draw submission 2.41 ms in that run. These measurements are machine-dependent CPU timings, not display FPS guarantees.

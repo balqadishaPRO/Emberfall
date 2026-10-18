@@ -1,6 +1,6 @@
-import {GameAudio} from './audio.mjs?v=ember-7';
-import {createGame,step,chooseUpgrade,talents,classes,categories,monsters,MAP,activeSkills,activate,threatBudget,liveThreat,MAX_ENEMIES,essences} from './engine.mjs?v=ember-7';
-import {Renderer} from './render.mjs?v=ember-7';
+import {GameAudio} from './audio.mjs?v=ember-8';
+import {createGame,step,chooseUpgrade,talents,classes,categories,monsters,MAP,activeSkills,activate,threatBudget,liveThreat,MAX_ENEMIES,essences} from './engine.mjs?v=ember-8';
+import {Renderer} from './render.mjs?v=ember-8';
 const $=selector=>document.querySelector(selector),canvas=$('#game'),overlay=$('#overlay'),renderer=new Renderer(canvas);
 let selectedClass='archer',g=createGame(),keys=new Set(),touch={x:0,y:0},pointer=null,last=0,accumulator=0,hudClock=0,screenStatus='',best=0,sound=true,lastKills=0,lastHealth=100,fullscreenTransition=0,lastDraw=0,drawStatus='';
 try{best=Number(localStorage.getItem('emberfall-best'))||0}catch{}

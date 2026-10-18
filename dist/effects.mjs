@@ -1,0 +1,12 @@
+// Cosmetics never use gameplay RNG. Recycle a fixed pool and reserve room for class casts.
+export const EFFECT_LIMIT=32;
+const stores=new WeakMap();
+function state(g){let s=stores.get(g);if(!s){s={free:Array.from({length:EFFECT_LIMIT},()=>({})),tokens:16};stores.set(g,s)}return s}
+export function effect(g,kind,x,y,r=20,color='#ffe4ac',x2=x,y2=y,important=false){
+ const s=state(g),limit=g.enemies.length>64?12:24;
+ if(g.effects.length>=EFFECT_LIMIT||(!important&&(g.effects.length>=limit||s.tokens<1)))return;
+ if(kind==='ring'&&g.effects.some(e=>e.kind===kind&&e.color===color&&e.max-e.life<.09&&(e.x-x)**2+(e.y-y)**2<1600))return;
+ const e=s.free.pop();if(!e)return;if(!important)s.tokens--;
+ Object.assign(e,{kind,x,y,r,color,x2,y2,life:kind==='bolt'?.16:kind==='spark'?.14:.32,max:kind==='bolt'?.16:kind==='spark'?.14:.32});g.effects.push(e);
+}
+export function updateEffects(g,dt){const s=state(g);s.tokens=Math.min(16,s.tokens+60*dt);let n=0;for(const e of g.effects){e.life-=dt;if(e.life>0)g.effects[n++]=e;else s.free.push(e)}g.effects.length=n}
