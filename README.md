@@ -29,7 +29,7 @@ Deploy `dist/` on a static host that serves `.mjs` as JavaScript. The optional G
 
 The compact top-right panel holds health, XP, level, time, kills, a small elite countdown, and the active button. A ready ultimate has a saturated class color, bright border, and larger icon; it does not pulse or animate. Hover over the clock for wave and difficulty budget. Boss/miniboss names and health bars appear above their heads. There is no bottom dock, top-center counter strip, minimap, particle system, floating damage text, screen shake, walking cycle, or attack animation.
 
-The renderer uses cached, static pixel sprites and a cached terrain image. Movement, projectiles, charge paths, and warning areas remain part of combat. There are no cosmetic animation allocations. Rendering is capped at 30 FPS while deterministic simulation runs at 60 Hz; paused/menu scenes redraw only on status or size changes. Canvas pixel density is capped at 1.5. CSS transitions and animations are disabled.
+The renderer uses cached, static illustrated sprites and a cached terrain image. Movement, projectiles, charge paths, and warning areas remain part of combat. There are no cosmetic animation allocations. Rendering is capped at 30 FPS while deterministic simulation runs at 60 Hz; paused/menu scenes redraw only on status or size changes. Canvas pixel density is capped at 1.5. CSS transitions and animations are disabled.
 
 ## Seven classes
 
@@ -118,8 +118,11 @@ Checks cover all seven class attacks, unique ranked pets, buffed pet damage, fix
 ## Source
 
 - `dist/engine.mjs`: deterministic combat, classes, passives, pets, elite aspects, and encounter director.
-- `dist/render.mjs`: cached static pixel art, terrain, warning geometry, projectiles, and overhead health.
+- `dist/render.mjs`: cached static illustrated art, terrain, warning geometry, projectiles, and overhead health.
+- `dist/illustrations.mjs`: the original organic terrain and detailed character/companion art, rasterized only when creating cached textures.
 - `dist/survival.mjs`: menu, compact HUD, decisions, controls, guide, audio settings, and records.
 - `dist/audio.mjs`: original music and combat synthesis.
 - `dist/survival.css`: responsive layout without animations or transitions.
 - `scripts/serve.mjs`: dependency-free preview server.
+
+The illustrated visual style is restored from the earlier forest version. All seven classes and seven pet types use frozen illustrated poses; the Tank has a tower shield, the Healer a dawn staff, and the Shapeshifter claws and inherited palette colors. Bright arrows, ice shards, and spell orbs are cached images as well. There are no per-frame character drawing paths, particle swarms, animated wings/limbs, screen shake, or dynamic glow filters. The compact HUD and all current gameplay rules are retained.
