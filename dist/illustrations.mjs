@@ -1,4 +1,4 @@
-import {MAP,classes} from './engine.mjs?v=ember-6';
+import {MAP,classes} from './engine.mjs?v=ember-7';
 const TAU=Math.PI*2;
 const hash=(x,y)=>{let n=Math.imul(x,374761393)+Math.imul(y,668265263);n^=n>>>13;return(Math.imul(n,1274126177)>>>0)/4294967296};
 function ellipse(c,x,y,rx,ry,fill,stroke){c.beginPath();c.ellipse(x,y,Math.max(.01,rx),Math.max(.01,ry),0,0,TAU);if(fill){c.fillStyle=fill;c.fill()}if(stroke){c.strokeStyle=stroke;c.stroke()}}
@@ -43,23 +43,23 @@ function golem(c,phase,attack){const stride=Math.sin(phase)*3;for(const d of [-1
 function brute(c,phase,attack,color){const stride=Math.sin(phase)*4;for(const d of [-1,1]){bone(c,[[d*8,-1],[d*12,8+stride*d],[d*14,15+stride*d]],'#637252',7);ellipse(c,d*16,-21,10,9,color,'#2d452d');bone(c,[[d*16,-18],[d*(22+(attack>0?3:0)),-5],[d*20,2-attack*20]],color,8)}ellipse(c,0,-14,19,22,'#7a8e63','#2e472e');ellipse(c,-2,-21,13,8,'#9cac79');ellipse(c,0,-34,11,10,'#a9b487','#3c5136');line(c,[[-7,-35],[-2,-34]],'#273f2c',2);line(c,[[3,-34],[8,-35]],'#273f2c',2);shape(c,[[-7,-29],[-9,-23],[-3,-27]],'#e8dabe',null);shape(c,[[6,-29],[8,-23],[2,-27]],'#e8dabe',null);line(c,[[-14,-2],[13,-2]],'#65513c',5)}
 function pet(c,p,g,clock){const target=g.enemies.find(e=>e.id===p.targetId),dir=target&&target.x<p.x?-1:1;const phase=p.walk||0;const attack=p.cooldown>.5?.2:0;if(p.kind==='wolf'){c.save();c.scale(.85,.85);quadruped(c,'wolf',phase,attack,dir,'#bcd6b5');c.restore()}else if(p.kind==='firepet')dragon(c,clock,attack,dir,true);else if(p.kind==='frostpet'){const flap=Math.sin(clock*9),color='#c1e2e1';for(const d of [-1,1]){c.beginPath();c.moveTo(d*4,-12);c.quadraticCurveTo(d*16,-26+flap*10,d*25,-15+flap*12);c.lineTo(d*13,-3);c.closePath();c.fillStyle='#7aa9bc';c.fill()}ellipse(c,0,-10,9,12,color,'#4a7386');ellipse(c,0,-20,10,8,'#d9eef0','#597b8e');for(const d of [-1,1])circle(c,d*4,-21,2.5,'#33485c');shape(c,[[-2,-16],[2,-16],[0,-12]],'#cfb57b',null)}else{glow(c,0,-16,32,'#ffef95',.3);ellipse(c,0,-14+Math.sin(clock*4)*3,6,10,'#fff1ad','#b39c58');for(let i=0;i<3;i++){const a=clock*4+i/3*TAU;circle(c,Math.cos(a)*15,-16+Math.sin(a)*9,2,'#fff8d5')}circle(c,-2,-16,1,'#6e6d4c');circle(c,2,-16,1,'#6e6d4c')}}
 
-// Poses are rasterized once, with frozen phase/clock values. These helpers never run in the frame loop.
-export function paintIllustration(c,kind,color){
- if(['wolf','stormpet','frostpet','firepet'].includes(kind)){pet(c,{kind,walk:0,cooldown:0,targetId:null},{enemies:[]},0);return}
+// Four poses are baked into atlases ahead of playback; no character paths run in the frame loop.
+export function paintIllustration(c,kind,color,frame=0){const phase=frame===1?Math.PI/2:frame===2?Math.PI*1.5:0,attack=frame===3?.18:0,clock=frame===1?.13:frame===2?.38:0;
+ if(['wolf','stormpet','frostpet','firepet'].includes(kind)){pet(c,{kind,walk:phase,cooldown:attack?1:0,targetId:null},{enemies:[]},clock);return}
  if(['healerpet','slowpet','guardianpet'].includes(kind)){
-  const tint=kind==='healerpet'?'#c3ecc4':kind==='slowpet'?'#b8cce9':'#edd89d';
-  for(const d of [-1,1]){ellipse(c,d*14,-18,12,6,tint+'88','#718b8077');ellipse(c,d*12,-10,10,5,tint+'66');line(c,[[d*5,-15],[d*20,-21]],tint,1)}
+  const wing=frame===1?3:frame===2?-3:0;const tint=kind==='healerpet'?'#c3ecc4':kind==='slowpet'?'#b8cce9':'#edd89d';
+  for(const d of [-1,1]){ellipse(c,d*14,-18+wing,12,6,tint+'88','#718b8077');ellipse(c,d*12,-10-wing,10,5,tint+'66');line(c,[[d*5,-15],[d*20,-21]],tint,1)}
   ellipse(c,0,-14,7,12,tint,'#496652');ellipse(c,0,-24,7,7,'#eee2bd','#4e6654');circle(c,-2,-25,1,'#39564b');circle(c,3,-25,1,'#39564b');
   if(kind==='healerpet'){line(c,[[0,-17],[0,-7]],'#fff8db',3);line(c,[[-4,-12],[4,-12]],'#fff8db',3)}
   if(kind==='slowpet'){shape(c,[[-4,-18],[4,-18],[-3,-8],[3,-8]],'#526788',null);line(c,[[0,-34],[-3,-38]],tint,1.5)}
   if(kind==='guardianpet'){ellipse(c,0,-36,10,3,null,'#f8e4a8');line(c,[[-5,-8],[0,-3],[5,-8]],'#fff3ca',2)}return;
  }
- if(kind==='bat')bat(c,0,'#a17bba');else if(kind==='brute')brute(c,0,0,color);
- else if(['charger','ravager'].includes(kind))quadruped(c,kind,0,0,1,color);
- else if(kind==='spitter')toad(c,0,0,color);else if(kind==='broodmother')spider(c,0,color);
- else if(['wraith','frostking'].includes(kind))ghost(c,kind,0,0,color);
- else if(kind==='warden')golem(c,0,0);else if(kind==='dragon')dragon(c,0,0,1);
- else{humanoid(c,kind,0,0,1,color,0,0);
+ if(kind==='bat')bat(c,clock,'#a17bba');else if(kind==='brute')brute(c,phase,attack,color);
+ else if(['charger','ravager'].includes(kind))quadruped(c,kind,phase,attack,1,color);
+ else if(kind==='spitter')toad(c,clock,attack,color);else if(kind==='broodmother')spider(c,phase,color);
+ else if(['wraith','frostking'].includes(kind))ghost(c,kind,clock,attack,color);
+ else if(kind==='warden')golem(c,phase,attack);else if(kind==='dragon')dragon(c,clock,attack,1);
+ else{humanoid(c,kind,phase,attack,1,color,clock,0);
   if(kind==='tank'){ellipse(c,-15,-7,13,19,'#72969d','#314c4c');ellipse(c,-15,-7,9,14,'#9fb4ad','#c4caa0');line(c,[[-15,-19],[-15,5]],'#d4d7b6',2)}
   if(kind==='healer'){line(c,[[19,-47],[19,-36]],'#edfbd4',2.4);line(c,[[15,-42],[23,-42]],'#edfbd4',2.4)}
   if(kind==='shapeshifter'){line(c,[[12,-8],[22,-19]],'#d8d4ba',2);line(c,[[15,-6],[25,-17]],'#d8d4ba',2);line(c,[[18,-4],[28,-15]],'#d8d4ba',2)}

@@ -27,9 +27,9 @@ Deploy `dist/` on a static host that serves `.mjs` as JavaScript. The optional G
 - 1–3 / click / tap: choose a level-up card. 1–7 select a class in the menu.
 - Leaving the tab pauses the run. Opening the guide, audio settings, or build also pauses.
 
-The compact top-right panel holds health, XP, level, time, kills, a small elite countdown, and the active button. A ready ultimate has a saturated class color, bright border, and larger icon; it does not pulse or animate. Hover over the clock for wave and difficulty budget. Boss/miniboss names and health bars appear above their heads. There is no bottom dock, top-center counter strip, minimap, particle system, floating damage text, screen shake, walking cycle, or attack animation.
+The compact top-right panel holds health, XP, level, time, kills, a small elite countdown, and the active button. A ready ultimate has a saturated class color, bright border, and larger icon; it does not pulse or animate. Hover over the clock for wave and difficulty budget. Boss/miniboss names and health bars appear above their heads. There is no bottom dock, top-center counter strip, minimap, particle system, floating damage text, screen shake, or particle swarms. Melee classes have a transparent primary attack-range circle that follows reach and area upgrades.
 
-The renderer uses cached, static illustrated sprites and a cached terrain image. Movement, projectiles, charge paths, and warning areas remain part of combat. There are no cosmetic animation allocations. Rendering is capped at 30 FPS while deterministic simulation runs at 60 Hz; paused/menu scenes redraw only on status or size changes. Canvas pixel density is capped at 1.5. CSS transitions and animations are disabled.
+The renderer plays four baked illustrated poses (idle, two walking/flying frames, attack) from sprite atlases, including mirrored frames. No character paths or glow filters run in the frame loop. System reduced-motion preference disables pose playback. Pausing freezes the simulation/animation clock. Rendering targets 60 FPS with corrected frame pacing and drops to 30 if measured draw submission cost exceeds the budget. Simulation remains at 60 Hz. Canvas pixel density is capped at 1.5 and 1.8 million backing pixels, dropping to 1× for crowded fights. Terrain has a separate canvas and redraws only when camera position or size changes. Render lists and collision buckets are reused. CSS transitions remain disabled.
 
 ## Seven classes
 
@@ -111,18 +111,26 @@ node scripts/audio-test.mjs
 node scripts/ui-smoke.mjs
 node scripts/indie-test.mjs
 node scripts/renderer-test.mjs
+node scripts/spatial-test.mjs
+node scripts/performance-bench.mjs
 ```
 
-Checks cover all seven class attacks, unique ranked pets, buffed pet damage, fixed healer rates, non-compounding projectile slowdown, guardian sacrifice and permanent loss, shotgun travel/cooldown limits, Assassin stats and dash damage, Tank defenses/AoE, Healer splash/sustain, all six inherited aspects and repeated ranks, eligible choices, deterministic ten-minute runs, the enemy budget on every crowded-test step, audio routing/limits, compact UI behavior, static rendering despite clock changes, cached sprites, and overhead boss health. Browser QA checks actual desktop and phone layouts and runtime errors. Automated audio tests inspect signal graphs rather than perceived sound quality.
+Checks cover all seven class attacks, unique ranked pets, buffed pet damage, fixed healer rates, non-compounding projectile slowdown, guardian sacrifice and permanent loss, shotgun travel/cooldown limits, Assassin stats and dash damage, Tank defenses/AoE, Healer splash/sustain, all six inherited aspects and repeated ranks, eligible choices, deterministic ten-minute runs, the enemy budget on every crowded-test step, audio routing/limits, compact UI behavior, cached animation playback, reduced motion, exact melee circles, stable collection identities, swept hits across grid boundaries, reused terrain, adaptive quality, and overhead boss health. Browser QA checks actual desktop and phone layouts and runtime errors. Automated audio tests inspect signal graphs rather than perceived sound quality.
 
 ## Source
 
 - `dist/engine.mjs`: deterministic combat, classes, passives, pets, elite aspects, and encounter director.
-- `dist/render.mjs`: cached static illustrated art, terrain, warning geometry, projectiles, and overhead health.
+- `dist/render.mjs`: cached illustrated animation atlases, terrain layer, melee reach circles, warning geometry, projectiles, adaptive resolution, and overhead health.
 - `dist/illustrations.mjs`: the original organic terrain and detailed character/companion art, rasterized only when creating cached textures.
 - `dist/survival.mjs`: menu, compact HUD, decisions, controls, guide, audio settings, and records.
 - `dist/audio.mjs`: original music and combat synthesis.
 - `dist/survival.css`: responsive layout without animations or transitions.
 - `scripts/serve.mjs`: dependency-free preview server.
 
-The illustrated visual style is restored from the earlier forest version. All seven classes and seven pet types use frozen illustrated poses; the Tank has a tower shield, the Healer a dawn staff, and the Shapeshifter claws and inherited palette colors. Bright arrows, ice shards, and spell orbs are cached images as well. There are no per-frame character drawing paths, particle swarms, animated wings/limbs, screen shake, or dynamic glow filters. The compact HUD and all current gameplay rules are retained.
+The illustrated visual style is restored from the earlier forest version. All seven classes and seven pet types retain the illustrated art with cached movement and attack poses; the Tank has a tower shield, the Healer a dawn staff, and the Shapeshifter claws and inherited palette colors. Bright arrows, ice shards, and spell orbs are cached images as well. There are no per-frame character drawing paths, particle swarms, screen shake, or dynamic glow filters. Wings and limbs animate by switching cached frames. The compact HUD and all current gameplay rules are retained.
+
+## Crowded-fight profiling
+
+The simulation reuses numeric spatial buckets instead of rebuilding string-keyed Maps every tick. Projectile hits use squared swept-distance checks; collection removal compacts arrays in place. Companion target IDs use a reusable lookup. Obstacle and area/orbit checks avoid unnecessary square roots. Melee target acquisition and its visible circle share the same primaryRange function.
+
+In a synchronous browser CPU benchmark at 1280 × 720, with 96 enemies and 219 hostile shots, the previous renderer averaged 2.29 ms per draw (p95 10.50 ms). With animation enabled, the updated renderer averaged 1.42 ms (p95 2.30 ms) in the same scenario. Average simulation time was 0.28 ms before and 0.27 ms after in that short browser sample. A separate 15,000-step Node profile fell from about 1553 ms total to 1250 ms. Timings depend on the machine and are CPU/submission measurements, not display FPS guarantees. The old fixed 30 FPS gate was also replaced with a cadence that preserves fractional frame time and targets smooth 60 FPS.
