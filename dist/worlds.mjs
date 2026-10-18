@@ -1,5 +1,5 @@
-import {MAP} from './engine.mjs?v=ember-10';
-import {buildMap} from './illustrations.mjs?v=ember-10';
+import {MAP} from './engine.mjs?v=ember-11';
+import {buildMap} from './illustrations.mjs?v=ember-11';
 export const scenes=[
  {id:'forest',name:'The Hollow Wood',ground:'#14291f',wash:'#28472c',light:'#73965a',dark:'#0c1e17',stone:'#68755b',side:'#374b3c',accent:'#b3be86',ambient:'#bddb80'},
  {id:'desert',name:'The Sunken Dunes',ground:'#705b40',wash:'#94764d',light:'#b89b67',dark:'#4c4432',stone:'#c0a36b',side:'#79613e',accent:'#e3c995',ambient:'#dfbd7d'},
@@ -29,8 +29,8 @@ export function paintObstacle(c,s,x,y,r){
  else if(s.id==='astral'){ellipse(c,x,y+12,r,r*.4,s.dark+'aa');poly(c,[[x-r*.8,y-18],[x-r*.3,y-r*1.25],[x+r*.5,y-r*1.4],[x+r*.9,y-30],[x+r*.5,y-2],[x-r*.5,y]],s.stone,s.dark);poly(c,[[x-r*.3,y-r*1.25],[x+r*.5,y-r*1.4],[x+r*.9,y-30],[x,y-21]],s.light);poly(c,[[x,y-21],[x+r*.9,y-30],[x+r*.5,y-2],[x+2,y+4]],s.side);line(c,[[x-12,y-20],[x-4,y-35],[x+7,y-25]],s.accent,2)}
  else if(s.id==='clockwork'){pillar(c,s,x,y,r);const gy=y-r*.75;for(let i=0;i<12;i++){const a=i/12*Math.PI*2,xx=x+Math.cos(a)*r*.63,yy=gy+Math.sin(a)*r*.63;c.save();c.translate(xx,yy);c.rotate(a);c.fillStyle=s.accent;c.fillRect(-5,-5,10,10);c.restore()}ellipse(c,x,gy,r*.6,r*.6,s.accent);ellipse(c,x,gy,r*.42,r*.42,s.side);ellipse(c,x,gy,7,7,s.stone);line(c,[[x,gy],[x+12,gy-10]],s.accent,3)}
 }
-function terrain(s,index){const image=document.createElement('canvas');image.width=1400;image.height=980;const c=image.getContext('2d');c.translate(-MAP.left,-MAP.top);c.fillStyle=s.ground;c.fillRect(MAP.left,MAP.top,1400,980);
- for(let i=0;i<800;i++){const x=MAP.left+hash(i,index)*1400,y=MAP.top+hash(index,i)*980,r=8+hash(i,17)*45;ellipse(c,x,y,r,r*.45,s.wash+'45')}
+function terrain(s,index,obstacles){const image=document.createElement('canvas');image.width=1400;image.height=980;const c=image.getContext('2d');c.translate(-MAP.left,-MAP.top);c.fillStyle=s.ground;c.fillRect(MAP.left,MAP.top,1400,980);
+ for(let i=0;i<1100;i++){const x=MAP.left+hash(i,index)*1400,y=MAP.top+hash(index,i)*980,r=8+hash(i,17)*45;ellipse(c,x,y,r,r*.45,s.wash+'45')}
  for(let tx=-23;tx<23;tx++)for(let ty=-16;ty<16;ty++){const x=tx*32+hash(tx,ty)*26,y=ty*34+hash(ty,tx)*24,n=hash(tx+index*7,ty);if(s.id==='desert'){if(n>.6)line(c,[[x-16,y],[x-5,y-3],[x+9,y-2],[x+19,y+2]],s.light+'40',1)}
   else if(s.id==='hell'){if(n>.82)line(c,[[x-9,y-9],[x,y],[x-4,y+10],[x+9,y+16]],s.accent+'55',1.5)}
   else if(s.id==='heaven'){if(n>.65){poly(c,[[x-13,y],[x,y-8],[x+13,y],[x,y+8]],s.light+'35');line(c,[[x-11,y],[x,y+6],[x+11,y]],s.accent+'40',1)}}
@@ -43,17 +43,17 @@ function terrain(s,index){const image=document.createElement('canvas');image.wid
  }
  // Shared readable arena landmarks; different material and construction per world.
  for(let i=0;i<24;i++){const a=i/24*Math.PI*2;line(c,[[Math.cos(a)*116,Math.sin(a)*116],[Math.cos(a)*124,Math.sin(a)*124]],s.accent+'35',3)}
- for(const o of MAP.obstacles)paintObstacle(c,s,o.x,o.y,o.r);
+ for(const o of obstacles){paintObstacle(c,s,o.x,o.y,o.r);const x=o.x,y=o.y,r=o.r;if(['desert','hell','heaven','clockwork'].includes(s.id)){for(let j=0;j<3;j++){const yy=y-r*.25-j*7;line(c,[[x-r*.45,yy],[x-3,yy+3]],s.accent+'88',1);line(c,[[x+5,yy+3],[x+r*.45,yy]],s.dark+'88',1)}for(const dx of [-1,1])ellipse(c,x+dx*r*.48,y-r*.8,1.2,1.2,s.accent)}else if(s.id==='crystal'||s.id==='glacier'){for(let j=0;j<4;j++)line(c,[[x+(j-1.5)*9,y-r*.25],[x+(j-2)*10,y-r*.9]],s.accent+'77',1)}else if(s.id==='autumn'||s.id==='swamp'){for(let j=0;j<4;j++)line(c,[[x-9+j*5,y-r],[x-7+j*5,y-r*.5],[x-8+j*5,y]],s.accent+'66',1)}else if(s.id==='astral'){line(c,[[x-15,y-r*.6],[x-6,y-r*.8],[x+2,y-r*.55],[x+9,y-r*.7]],s.accent+'aa',1)}}
  for(let x=MAP.left+20;x<MAP.right;x+=60)for(const y of [MAP.top+12,MAP.bottom-12]){poly(c,[[x-25,y],[x,y-14],[x+25,y],[x+23,y+13],[x-24,y+12]],s.side,s.dark);line(c,[[x-22,y],[x,y-11],[x+22,y]],s.stone,3)}
  for(let y=MAP.top+40;y<MAP.bottom;y+=60)for(const x of [MAP.left+14,MAP.right-14]){poly(c,[[x-13,y-25],[x+8,y-30],[x+18,y],[x+8,y+25],[x-13,y+23]],s.side,s.dark);line(c,[[x-10,y-22],[x+6,y-27],[x+14,y-2]],s.stone,2)}
  for(const x of [-580,580])for(const y of [-380,380]){ellipse(c,x,y,35,12,s.dark+'55');line(c,[[x-18,y],[x,y-8],[x+18,y],[x,y+8],[x-18,y]],s.accent+'55',2)}return image;
 }
-export function getSceneMap(index){index=((index%10)+10)%10;if(maps.has(index)){const map=maps.get(index);maps.delete(index);maps.set(index,map);return map}const image=index===0?buildMap():terrain(scenes[index],index);maps.set(index,image);while(maps.size>SCENE_CACHE_LIMIT)maps.delete(maps.keys().next().value);return image}
+export function getSceneMap(index,obstacles=MAP.obstacles,layoutKey='default'){index=((index%10)+10)%10;const key=layoutKey+':'+index;if(maps.has(key)){const map=maps.get(key);maps.delete(key);maps.set(key,map);return map}const image=index===0?buildMap(obstacles):terrain(scenes[index],index,obstacles);maps.set(key,image);while(maps.size>SCENE_CACHE_LIMIT)maps.delete(maps.keys().next().value);return image}
 export function sceneCacheSize(){return maps.size}
-export function warmNextScene(index){if(typeof window!=='undefined'&&window.requestIdleCallback)window.requestIdleCallback(()=>getSceneMap((index+1)%10),{timeout:2000})}
+let warmTicket=0;export function warmNextScene(index,obstacles=MAP.obstacles,layoutKey='default'){const ticket=++warmTicket;if(typeof window!=='undefined'&&window.requestIdleCallback)window.requestIdleCallback(()=>{if(ticket===warmTicket)getSceneMap((index+1)%10,obstacles,layoutKey)},{timeout:2000})}
 // At most six low-contrast accents, updated at 4 Hz on the foreground layer.
-export function drawAmbience(c,index,time,reduced=false){const s=scenes[index],frame=reduced?1:Math.floor(time*4)%4;c.imageSmoothingEnabled=false;c.globalAlpha=.48;
- for(let i=0;i<MAP.obstacles.length;i++){const o=MAP.obstacles[i],x=Math.round(o.x),y=Math.round(o.y-o.r*(index===2?1.3:1.5));c.fillStyle=s.ambient;
+export function drawAmbience(c,index,time,reduced=false,obstacles=MAP.obstacles,opacity=1){const s=scenes[index],frame=reduced?1:Math.floor(time*4)%4;c.imageSmoothingEnabled=false;c.globalAlpha=.48*opacity;
+ for(let i=0;i<obstacles.length;i++){const o=obstacles[i],x=Math.round(o.x),y=Math.round(o.y-o.r*(index===2?1.3:1.5));c.fillStyle=s.ambient;
   if(index===2){for(let j=0;j<4;j++){const h=6+(j*3+frame*2+i)%9;c.fillRect(x-8+j*4,y-h,4,h)}c.fillStyle='#f1c17f';c.fillRect(x-2,y-6,4,5)}
   else if(index===3||index===6||index===8){const d=(frame+i)%4;c.fillRect(x-8+d*5,y-4-d*2,2,2);c.fillRect(x+7-d*3,y+4,2,2)}
   else if(index===5){c.fillRect(x-16+frame*4,y+o.r*.6,2,2);c.fillRect(x+15-frame*2,y+o.r*.8,2,2)}

@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict';
-import {MAP,createGame,step} from '../dist/engine.mjs?v=ember-10';
+import {MAP,createGame,step} from '../dist/engine.mjs?v=ember-11';
 const signatures=[];let count=0;
 function context(log=[]){return new Proxy({},{get:(_,key)=>(...args)=>{assert.ok(args.filter(x=>typeof x==='number').every(Number.isFinite),key);log.push([key,...args])},set:(_,key,value)=>{log.push([key,value]);return true}})}
 globalThis.document={createElement:()=>{const log=[],image={tag:++count,width:0,height:0,getContext:()=>context(log)};signatures.push(log);return image}};
-const {scenes,sceneAt,sceneIndex,getSceneMap,sceneCacheSize,SCENE_CACHE_LIMIT,paintObstacle,drawAmbience}=await import('../dist/worlds.mjs?v=ember-10');
+const {scenes,sceneAt,sceneIndex,getSceneMap,sceneCacheSize,SCENE_CACHE_LIMIT,paintObstacle,drawAmbience}=await import('../dist/worlds.mjs?v=ember-11');
 assert.equal(scenes.length,10);assert.equal(new Set(scenes.map(s=>s.id)).size,10);assert.equal(sceneAt(59.999).id,'forest');assert.equal(sceneAt(60).id,'desert');assert.equal(sceneAt(120).id,'hell');assert.equal(sceneAt(180).id,'heaven');assert.equal(sceneAt(600).id,'forest');assert.equal(sceneIndex(-1),0);assert.equal(sceneIndex(Infinity),0);
 const footprint=JSON.stringify(MAP.obstacles),obstacles=new Set(),textures=new Set();
 for(let i=0;i<10;i++){const image=getSceneMap(i);assert.equal(image.width,1400);assert.equal(image.height,980);const before=count;assert.equal(getSceneMap(i),image);assert.equal(count,before,'current map is cached');assert.ok(sceneCacheSize()<=SCENE_CACHE_LIMIT);textures.add(JSON.stringify(signatures.at(-1)));const log=[];if(i>0)paintObstacle(context(log),scenes[i],0,0,45);else log.push('original forest rock piles');obstacles.add(JSON.stringify(log))}

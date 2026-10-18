@@ -1,0 +1,10 @@
+import assert from 'node:assert/strict';
+import {generateObstacles} from '../dist/layout.mjs';
+import {createGame,constrain,spawnEnemy,step} from '../dist/engine.mjs';
+const layouts=new Set();
+for(let seed=0;seed<500;seed++){const obstacles=generateObstacles(seed);assert.equal(obstacles.length,6);assert.deepEqual(obstacles,generateObstacles(seed));assert.equal(new Set(obstacles.map(o=>o.sector)).size,6);layouts.add(JSON.stringify(obstacles));for(const o of obstacles){assert.ok(Math.hypot(o.x,o.y)-o.r>=178);assert.ok(Math.abs(o.x)+o.r<620&&Math.abs(o.y)+o.r<420);for(const p of obstacles)if(p!==o)assert.ok(Math.hypot(o.x-p.x,o.y-p.y)-o.r-p.r>=132,'navigation lanes must stay open')}
+ // Sample hero-sized free cells and verify all are connected to the clear spawn zone.
+ const cells=new Set();for(let x=-640;x<=640;x+=40)for(let y=-420;y<=420;y+=40)if(obstacles.every(o=>Math.hypot(x-o.x,y-o.y)>=o.r+22))cells.add(x+','+y);const start='0,-20',seen=new Set([start]),queue=[[0,-20]];for(let i=0;i<queue.length;i++){const [x,y]=queue[i];for(const [dx,dy]of [[40,0],[-40,0],[0,40],[0,-40]]){const key=(x+dx)+','+(y+dy);if(cells.has(key)&&!seen.has(key)){seen.add(key);queue.push([x+dx,y+dy])}}}assert.equal(seen.size,cells.size,'all sampled walkable regions must be reachable')}
+assert.equal(layouts.size,500,'new seeds generate varied layouts');
+const a=createGame(10),b=createGame(11);assert.notDeepEqual(a.obstacles,b.obstacles);assert.notEqual(a.obstacles,b.obstacles);const obstacle=a.obstacles[0];a.x=obstacle.x;a.y=obstacle.y;constrain(a,18);assert.ok(Math.hypot(a.x-obstacle.x,a.y-obstacle.y)>=obstacle.r+17.99);const e=spawnEnemy(a,'walker',{x:obstacle.x,y:obstacle.y});assert.ok(Math.hypot(e.x-obstacle.x,e.y-obstacle.y)>=obstacle.r+e.r-.001);const snapshot=JSON.stringify(b.obstacles);a.status='playing';a.spawn=-1e6;step(a,.02);assert.equal(JSON.stringify(b.obstacles),snapshot,'runs cannot change each other’s geometry');
+console.log('Layout checks passed: 500 varied deterministic layouts, six populated regions, spawn safety, spacing, connected paths, and per-run hero/enemy collisions.');

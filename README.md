@@ -29,7 +29,7 @@ Deploy `dist/` on a static host that serves `.mjs` as JavaScript. The optional G
 
 The compact top-right panel holds health, XP, level, time, kills, a small elite countdown, and the active button. A ready ultimate has a saturated class color, bright border, and larger icon; it does not pulse or animate. Hover over the clock for wave and difficulty budget. Boss/miniboss names and health bars appear above their heads. There is no bottom dock, top-center counter strip, minimap, floating damage text, screen shake, or particle swarms. A 32-unit basic attack cooldown bar sits directly above each class’s head, filling amber and turning pale green when ready. Melee classes have a transparent primary attack-range circle that follows reach and area upgrades.
 
-The renderer plays four baked illustrated poses (idle, two walking/flying frames, attack) from sprite atlases, including mirrored frames. No character paths or glow filters run in the frame loop. System reduced-motion preference disables pose playback. Pausing freezes the simulation/animation clock. Rendering targets 60 FPS with corrected frame pacing and drops to 30 if measured draw submission cost exceeds the budget. Simulation remains at 60 Hz. Canvas pixel density is capped at 1.5 and 1.8 million backing pixels, dropping to 1× for crowded fights. Terrain has a separate canvas and redraws only when camera position, viewport size, or realm changes. Render lists and collision buckets are reused. CSS transitions remain disabled.
+The renderer plays four baked illustrated poses (idle, two walking/flying frames, attack) from sprite atlases, including mirrored frames. No character paths or glow filters run in the frame loop. System reduced-motion preference disables pose playback. Pausing freezes the simulation/animation clock. Rendering targets 60 FPS with corrected frame pacing and drops to 30 if measured draw submission cost exceeds the budget. Simulation remains at 60 Hz. Canvas pixel density is capped at 1.5 and 1.8 million backing pixels, dropping to 1× for crowded fights. Terrain has a separate canvas and redraws only when camera position or viewport size changes, or during a brief realm crossfade. Render lists and collision buckets are reused. CSS transitions remain disabled.
 
 ## Seven classes
 
@@ -115,6 +115,7 @@ node scripts/spatial-test.mjs
 node scripts/effects-test.mjs
 node scripts/art-test.mjs
 node scripts/worlds-test.mjs
+node scripts/layout-test.mjs
 node scripts/performance-bench.mjs
 ```
 
@@ -122,6 +123,8 @@ Checks cover all seven class attacks, unique ranked pets, buffed pet damage, fix
 
 ## Source
 
+- `dist/layout.mjs`: seeded obstacle placement across six regions with safe starting space and wide navigation lanes.
+- `dist/monster-details.mjs`: cached material shading, armor, weapons, anatomy, and caster/boss detail.
 - `dist/engine.mjs`: deterministic combat, classes, passives, pets, elite aspects, and encounter director.
 - `dist/effects.mjs`: recycled, rate-limited visual effects with reserved capacity for class casts.
 - `dist/worlds.mjs`: ten terrain/material sets, distinct obstacle models, bounded three-map cache, next-scene idle prewarming, and subtle pixel accents.
@@ -146,7 +149,7 @@ In a synchronous browser CPU benchmark at 1280 × 720, with 96 enemies and 219 h
 
 Shapeshifter claw attacks have separate cached wind-up, strike, and recovery poses, plus three directional claw trails. A pre-baked red overlay flashes the hero for 0.24 seconds on actual health loss. Full shield blocks, dodges, invulnerability, level-up protection, and guardian saves do not trigger it.
 
-Class actives, area passives, elemental explosions, lightning chains, companion hits, elite absorption, guardian sacrifice, and level-up protection have brief colored feedback. Effect objects are recycled from a fixed 32-object pool. Normal effects admit at most 24 at once, falling to 12 above 64 enemies, with a 60-per-second token budget and duplicate pulse suppression. Reserved capacity keeps class casts visible. Effects expire on the simulation clock, freeze during pause, and never consume gameplay randomness. Offscreen effects are culled; reduced motion removes pulse expansion and claw trails. There are no particle swarms, runtime gradients, filters, or screen shake.
+Class actives, area passives, elemental explosions, lightning chains, companion hits, elite absorption, guardian sacrifice, and level-up protection have brief colored feedback. Effect objects are recycled from a fixed 32-object pool. Normal effects admit at most 24 at once, falling to 12 above 64 enemies, with a 60-per-second token budget and duplicate pulse suppression. Reserved capacity keeps class casts visible. Effects expire on the simulation clock, freeze during pause, and never consume gameplay randomness. Offscreen effects are culled; reduced motion stops pulse expansion and retains static attack feedback. There are no particle swarms, runtime gradients, filters, or screen shake.
 
 A 15,000-step Node sample measured 1324 ms before and 1356 ms after adding effects (about 2% overhead). A browser stress scene with 96 enemies, 219 hostile shots, and deliberately saturated effects stayed at the 32-effect ceiling; average simulation CPU time was 0.28 ms and average draw submission 2.41 ms in that run. These measurements are machine-dependent CPU timings, not display FPS guarantees.
 
@@ -182,3 +185,19 @@ Models retain shaded faces and detail. Every runtime combat effect now uses pixe
 Realm changes replace artwork only. Arena walls, all six obstacle centers/radii, entity positions, health, build, attack timers, boss timing, and spawn budget stay consistent. Map textures are generated once and kept in a three-map LRU cache (roughly 16 MB of RGBA map data); the next scene is prewarmed during browser idle time. The terrain canvas remains cached while only low-contrast pixel accents animate on the foreground layer.
 
 A crowded Hell browser sample with 96 enemies, 219 hostile shots, and 32 active effects averaged 0.18 ms simulation and 2.29 ms draw submission. The 15,000-step Node simulation benchmark measured 1336 ms. Timings are CPU samples, not display FPS guarantees. Tests cover all ten terrain and obstacle designs, exact minute boundaries, cycling, pause behavior, unchanged collisions, bounded scene cache, reduced motion, terrain invalidation/reuse, and the absence of curved-path runtime effects.
+
+## Combat, scenery, and model detail overhaul
+
+Basic melee attacks now draw a broad, bright pixel crescent (three claw strokes for Shapeshifter). Fighter’s Iron cyclone draws two rotating sweeps around its actual damage radius, plus impact dust. Cached six-frame, eight-direction swing sheets keep this to one draw per basic swing and two for cyclone. Reduced motion uses an attack pose and static crescents rather than removing combat feedback.
+
+Periodic attacks have school-specific particle fields across the damage area: Pressure ring and Thunderclap use small stepped lightning bolts; fire spells cast embers and flame tongues; frost spells scatter icy stars; roots and venom use leaf fragments; holy strikes have radiant crosses; arcane strikes use runic diamonds; physical impacts throw chips and dust. Each entire particle field is one eight-frame bitmap, not dozens of simulated entities. Elemental explosions and pet attacks use the same schools. The existing 32-effect pool, crowded limits, and rate budget remain in force.
+
+Space is prevented on both keydown and keyup while a level-up choice is open. The decision panel receives initial focus instead of the first upgrade button. A held ultimate key therefore cannot trigger the browser’s default button activation. Click, tap, and 1/2/3 remain supported. Space continues to activate class ultimates during gameplay.
+
+Every new run owns its obstacle array. Six broad regions each receive one seeded obstacle; rejection sampling and clearance scoring preserve a clear center, large gaps, and wall margins. Geometry is never stored by mutating the shared map. Heroes, enemies, pets, knockback, and dashes all use that run’s collision geometry, and all ten scene textures use the same layout. The map cache includes the layout key, and stale idle warmups are skipped when another run/layout supersedes them. Tests check 500 layouts for coverage, spacing, spawn safety, and connected sampled walkable regions.
+
+Realm changes crossfade terrain, obstacle models, and ambient accents over 0.9 seconds (0.35 seconds with reduced motion). The clock and fade stop during pause/decisions. A new run resets any previous fade. Only the short transition draws both maps; steady scenery remains cached.
+
+All fourteen enemy types gained readable attack-role features and material detail: skeletal armor and broken blades, archer quivers, bat wing veins and fangs, brute plates and clubs, ram armor and horns, Ravager mane/tusks, spitter poison sacs and pores, bone-masked summoners with grimoires, masked hexers and runic gear, torn wraith cloth, Broodmother segments and eyes, Warden engravings and moss, frost crowns and icicles, and dragon scales and wing ribs. Class models gained surface lighting, fabric seams, edge highlights, and fasteners; companions, terrain, and obstacle materials have extra detail. Model gradients are baked once into the atlases; runtime combat effects remain pixel art. Class selection now shows the actual cached model portraits.
+
+The richer-effects browser sample held 96 enemies, 219 hostile shots, and 32 effects, averaging 0.21 ms simulation and 2.54 ms draw submission. A 15,000-step simulation benchmark measured 1307 ms. These are machine-dependent CPU samples, not display FPS guarantees. Tests additionally cover Space keydown/keyup protection, elemental field events, reduced-motion swings, fade intermediate opacity/completion, layout isolation, per-run collisions, and fourteen distinct detailed enemy overlays.

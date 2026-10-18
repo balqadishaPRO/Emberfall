@@ -1,5 +1,6 @@
-import {paintHero} from './heroes.mjs?v=ember-10';
-import {MAP,classes} from './engine.mjs?v=ember-10';
+import {shadeModel,paintEnemyDetails} from './monster-details.mjs?v=ember-11';
+import {paintHero} from './heroes.mjs?v=ember-11';
+import {MAP,classes} from './engine.mjs?v=ember-11';
 const TAU=Math.PI*2;
 const hash=(x,y)=>{let n=Math.imul(x,374761393)+Math.imul(y,668265263);n^=n>>>13;return(Math.imul(n,1274126177)>>>0)/4294967296};
 function ellipse(c,x,y,rx,ry,fill,stroke){c.beginPath();c.ellipse(x,y,Math.max(.01,rx),Math.max(.01,ry),0,0,TAU);if(fill){c.fillStyle=fill;c.fill()}if(stroke){c.strokeStyle=stroke;c.stroke()}}
@@ -8,13 +9,13 @@ function line(c,points,color,width=2){c.beginPath();c.moveTo(...points[0]);for(l
 function shape(c,points,fill,stroke='#101e1a',width=1.4){c.beginPath();c.moveTo(...points[0]);for(let i=1;i<points.length;i++)c.lineTo(...points[i]);c.closePath();if(fill){c.fillStyle=fill;c.fill()}if(stroke){c.lineWidth=width;c.strokeStyle=stroke;c.stroke()}}
 function glow(c,x,y,r,color,alpha=.25){c.save();c.globalAlpha=alpha;c.fillStyle=color;for(let i=0;i<12;i++){const a=i/12*Math.PI*2;c.fillRect(Math.round(x+Math.cos(a)*r*.55),Math.round(y+Math.sin(a)*r*.55),2,2)}c.fillRect(Math.round(x)-2,Math.round(y)-2,4,4);c.restore()}
 function bone(c,points,color='#d6d3b9',width=3){line(c,points,'#17251f',width+2);line(c,points,color,width)}
-function rock(c,x,y,r,seed){const points=[];for(let i=0;i<8;i++){const a=i/8*TAU,k=.75+hash(seed,i)*.28;points.push([x+Math.cos(a)*r*k,y+Math.sin(a)*r*.65*k])}ellipse(c,x+5,y+14,r*1.1,r*.5,'#0818118c');shape(c,points,'#465345','#1c3026',2);shape(c,[points[4],points[5],points[6],[x+4,y-1],points[3]],'#6a745a',null);line(c,[[x-r*.4,y-r*.23],[x,y-r*.38],[x+r*.3,y-r*.2]],'#9ca47844',2);line(c,[[x+5,y-2],[x+10,y+10],[x+7,y+20]],'#263c2e',2)}
-export function buildMap(){const image=document.createElement('canvas');image.width=MAP.right-MAP.left;image.height=MAP.bottom-MAP.top;const c=image.getContext('2d');c.translate(-MAP.left,-MAP.top);c.fillStyle='#14291f';c.fillRect(MAP.left,MAP.top,image.width,image.height);
+function rock(c,x,y,r,seed){const points=[];for(let i=0;i<8;i++){const a=i/8*TAU,k=.75+hash(seed,i)*.28;points.push([x+Math.cos(a)*r*k,y+Math.sin(a)*r*.65*k])}ellipse(c,x+5,y+14,r*1.1,r*.5,'#0818118c');shape(c,points,'#465345','#1c3026',2);shape(c,[points[4],points[5],points[6],[x+4,y-1],points[3]],'#6a745a',null);line(c,[[x-r*.4,y-r*.23],[x,y-r*.38],[x+r*.3,y-r*.2]],'#9ca47844',2);line(c,[[x+5,y-2],[x+10,y+10],[x+7,y+20]],'#263c2e',2);for(let i=0;i<9;i++){const px=x+(hash(seed,i+40)-.5)*r,py=y+(hash(seed,i+70)-.5)*r*.55;line(c,[[px,py],[px+2,py-1]],i%2?'#c5c79c33':'#152d2444',1)}}
+export function buildMap(obstacles=MAP.obstacles){const image=document.createElement('canvas');image.width=MAP.right-MAP.left;image.height=MAP.bottom-MAP.top;const c=image.getContext('2d');c.translate(-MAP.left,-MAP.top);c.fillStyle='#14291f';c.fillRect(MAP.left,MAP.top,image.width,image.height);
  for(let i=0;i<2200;i++){const x=MAP.left+hash(i,3)*image.width,y=MAP.top+hash(i,9)*image.height,r=10+hash(i,5)*55;ellipse(c,x,y,r,r*.55,i%3?'#28472c2a':'#59603b14')}
  c.beginPath();c.moveTo(MAP.left,30);c.bezierCurveTo(-500,-40,450,60,MAP.right,-15);c.lineWidth=85;c.strokeStyle='#8d866a0d';c.stroke();c.beginPath();c.moveTo(20,MAP.top);c.bezierCurveTo(-50,-300,45,300,-10,MAP.bottom);c.lineWidth=76;c.stroke();
  for(let tx=-23;tx<23;tx++)for(let ty=-17;ty<17;ty++){const x=tx*48+hash(tx,ty)*40,y=ty*48+hash(ty,tx)*40,r=hash(tx+17,ty);if(r>.48){for(let k=0;k<3;k++)line(c,[[x+k*4,y+4],[x+k*4-2,y-3-k],[x+k*4-4,y-6-k]],r>.8?'#68825455':'#52784a44',1)}if(r>.94){ellipse(c,x,y,7,2,'#071c1666');line(c,[[x,y],[x,y-6]],'#b5bb7c',1.5);ellipse(c,x,y-7,5,2.4,'#c0a66d')}if(r<.04){line(c,[[x,y],[x+3,y-13]],'#648258',1.2);for(let k=1;k<5;k++)line(c,[[x-6+k,y-k*2],[x+1,y-k*2-1],[x+7-k,y-k*2-4]],'#73965a66',1.3)}}
  c.lineWidth=2;circle(c,0,0,125,null,'#a3a47d26');circle(c,0,0,113,null,'#a3a47d18');for(let i=0;i<12;i++){const a=i/12*TAU;line(c,[[Math.cos(a)*114,Math.sin(a)*114],[Math.cos(a)*124,Math.sin(a)*124]],'#b3b18a33',4)}
- for(const o of MAP.obstacles){for(let i=0;i<5;i++){const a=i/5*TAU;rock(c,o.x+Math.cos(a)*o.r*.38,o.y+Math.sin(a)*o.r*.35,o.r*.62,i+o.x)}for(let i=0;i<4;i++){const a=i/4*TAU;ellipse(c,o.x+Math.cos(a)*o.r*.7,o.y+Math.sin(a)*o.r*.45,12,5,'#5d7c4255')}}
+ for(const o of obstacles){for(let i=0;i<5;i++){const a=i/5*TAU;rock(c,o.x+Math.cos(a)*o.r*.38,o.y+Math.sin(a)*o.r*.35,o.r*.62,i+o.x)}for(let i=0;i<4;i++){const a=i/4*TAU;ellipse(c,o.x+Math.cos(a)*o.r*.7,o.y+Math.sin(a)*o.r*.45,12,5,'#5d7c4255')}}
  for(let x=MAP.left+20;x<MAP.right;x+=42)for(const y of [MAP.top+14,MAP.bottom-12])rock(c,x,y,27,x);for(let y=MAP.top+30;y<MAP.bottom;y+=42)for(const x of [MAP.left+12,MAP.right-12])rock(c,x,y,26,y);
  for(const [x,y,color]of [[-580,-380,'#81d9e9'],[580,380,'#ed9c65'],[-580,380,'#c0d582'],[580,-380,'#c09ee3']]){ellipse(c,x,y+13,43,15,'#071b12aa');shape(c,[[x-32,y+10],[x-26,y-25],[x-19,y-37],[x+23,y-34],[x+30,y-21],[x+34,y+10]],'#4a5946','#233a2a',2);line(c,[[x-24,y-28],[x+22,y-28]],'#939e7644',3);circle(c,x,y-15,12,null,color);line(c,[[x,y-24],[x-5,y-12],[x+5,y-12],[x,y-24]],color,1.7)}return image;
 }
@@ -44,7 +45,7 @@ function brute(c,phase,attack,color){const stride=Math.sin(phase)*4;for(const d 
 function pet(c,p,g,clock){const target=g.enemies.find(e=>e.id===p.targetId),dir=target&&target.x<p.x?-1:1;const phase=p.walk||0;const attack=p.cooldown>.5?.2:0;if(p.kind==='wolf'){c.save();c.scale(.85,.85);quadruped(c,'wolf',phase,attack,dir,'#bcd6b5');c.restore()}else if(p.kind==='firepet')dragon(c,clock,attack,dir,true);else if(p.kind==='frostpet'){const flap=Math.sin(clock*9),color='#c1e2e1';for(const d of [-1,1]){c.beginPath();c.moveTo(d*4,-12);c.quadraticCurveTo(d*16,-26+flap*10,d*25,-15+flap*12);c.lineTo(d*13,-3);c.closePath();c.fillStyle='#7aa9bc';c.fill()}ellipse(c,0,-10,9,12,color,'#4a7386');ellipse(c,0,-20,10,8,'#d9eef0','#597b8e');for(const d of [-1,1])circle(c,d*4,-21,2.5,'#33485c');shape(c,[[-2,-16],[2,-16],[0,-12]],'#cfb57b',null)}else{glow(c,0,-16,32,'#ffef95',.3);ellipse(c,0,-14+Math.sin(clock*4)*3,6,10,'#fff1ad','#b39c58');for(let i=0;i<3;i++){const a=clock*4+i/3*TAU;circle(c,Math.cos(a)*15,-16+Math.sin(a)*9,2,'#fff8d5')}circle(c,-2,-16,1,'#6e6d4c');circle(c,2,-16,1,'#6e6d4c')}}
 
 // Four poses are baked into atlases ahead of playback; no character paths run in the frame loop.
-export function paintIllustration(c,kind,color,frame=0){const phase=frame===1?Math.PI/2:frame===2?Math.PI*1.5:0,attack=frame===3?.18:frame===4?.36:frame===5?.07:0,clock=frame===1?.13:frame===2?.38:0;
+function paintBase(c,kind,color,frame=0){const phase=frame===1?Math.PI/2:frame===2?Math.PI*1.5:0,attack=frame===3?.18:frame===4?.36:frame===5?.07:0,clock=frame===1?.13:frame===2?.38:0;
  if(classes.some(cl=>cl.id===kind)){paintHero(c,kind,color,frame);return}
  if(['wolf','stormpet','frostpet','firepet'].includes(kind)){pet(c,{kind,walk:phase,cooldown:attack?1:0,targetId:null},{enemies:[]},clock);return}
  if(['healerpet','slowpet','guardianpet'].includes(kind)){
@@ -66,6 +67,7 @@ export function paintIllustration(c,kind,color,frame=0){const phase=frame===1?Ma
   if(kind==='shapeshifter'){const reach=frame===4?-5:frame===3?13:frame===5?8:0,lift=frame===4?-17:frame===3?0:frame===5?9:0;bone(c,[[7,-20],[17+reach,-15+lift],[21+reach,-9+lift]],color,5);for(let i=0;i<3;i++)line(c,[[18+reach+i*3,-10+lift+i*3],[29+reach+i*3,-23+lift+i*3]],'#f2e9cd',2)}
  }
 }
+export function paintIllustration(c,kind,color,frame=0){c.save();c.globalAlpha=.22;ellipse(c,2,18,kind==='dragon'?26:kind==='brute'?21:17,4,'#091710');c.restore();paintBase(c,kind,color,frame);shadeModel(c,kind);paintEnemyDetails(c,kind,color,frame)}
 export function paintProjectile(c,kind,color,hostile){
  const outline=hostile?'#ff5c7a':'#ad985f';line(c,[[-18,0],[-1,0]],color+'99',hostile?4:2);
  if(kind==='arrow'||kind==='volley'){line(c,[[-14,0],[8,0]],color,2.2);shape(c,[[11,0],[1,-5],[3,0],[1,5]],'#fff3d5',outline,1.5)}

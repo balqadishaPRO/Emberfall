@@ -24,8 +24,12 @@ export function paintHero(c,kind,color,frame){
  // Arms and gauntlets keep their pose visible beneath class weapons.
  const handX=attacking?23:16,handY=attacking?-18:-10;
  for(const side of [-1,1]){const x=side<0?-15:handX,y=side<0?-5:handY;line(c,[[side*width,-23],[side*(width+5),-16],[x,y]],heavy?'#829eaa':feral?'#92785b':color,heavy?8:5);oval(c,x,y,3,3,heavy||kind==='fighter'?steel:skin);line(c,[[x-3,y-5],[x+2,y-5]],gold,1.5)}
+ // Faceted cloth/metal lighting, seam stitches and worn fasteners.
+ poly(c,[[-width+1,-22],[-width+4,-24],[-width+4,-8],[-width+1,-5]],heavy||kind==='fighter'?'#e3ece033':'#fff4d222',null);poly(c,[[width-5,-24],[width-1,-23],[width-2,-4],[width-5,-6]],'#10262844',null);
+ for(let i=0;i<5;i++){const yy=-22+i*4;line(c,[[-width+2,yy],[-width+3,yy+1]],gold,.65);if(caster)line(c,[[width-3,yy],[width-2,yy+1]],'#f1e8c1',.7)}
+ for(const side of [-1,1]){oval(c,side*(width-2),-2,.8,.8,'#f5dfad',null);line(c,[[side*7,6],[side*8,13]],'#b5baa14d',1);line(c,[[side*width,-19],[side*(width+3),-17]],'#f3e3b955',1)}
  // Faces and headgear: distinct helmet / hood / hat / antlers / halo.
- oval(c,0,-35,7.5,9,skin);poly(c,[[-7,-38],[-4,-44],[5,-43],[8,-36],[4,-38],[0,-40]],'#584334');line(c,[[2,-36],[5,-36]],'#203435',1.4);line(c,[[3,-30],[5,-30]],'#a27359',1);
+ oval(c,0,-35,7.5,9,skin);poly(c,[[-7,-38],[-4,-44],[5,-43],[8,-36],[4,-38],[0,-40]],'#584334');line(c,[[2,-36],[5,-36]],'#203435',1.4);line(c,[[3,-30],[5,-30]],'#a27359',1);oval(c,5,-34,1.3,2,'#b88d6d',null);line(c,[[0,-39],[4,-38]],'#f0cfaa',1);line(c,[[3,-35],[5,-35]],'#eff0d2',.7);
  if(heavy||kind==='fighter'){poly(c,[[-9,-42],[-5,-48],[5,-48],[10,-41],[9,-29],[-9,-29]],steel);poly(c,[[-7,-38],[7,-38],[7,-33],[-7,-33]],'#253e49');line(c,[[-3,-36],[4,-36]],'#a1e6ed',1);line(c,[[0,-46],[0,-30]],gold,2);for(const x of [-5,0,5])line(c,[[x,-31],[x,-28]],'#536d75',1);if(heavy)poly(c,[[-8,-47],[-5,-53],[6,-52],[9,-46]],'#7995a1')}
  if(kind==='archer'){poly(c,[[-10,-31],[-11,-43],[-2,-49],[9,-43],[10,-31],[5,-34],[4,-42],[-5,-41],[-5,-32]],'#537449');line(c,[[-7,-41],[-3,-45],[4,-42]],'#a4ba7c',1);poly(c,[[3,-47],[8,-58],[11,-53],[7,-47]],'#e0d1a1')}
  if(slim){poly(c,[[-10,-28],[-12,-41],[-3,-48],[8,-44],[11,-30],[6,-32],[5,-39],[-5,-39],[-5,-29]],'#48415c');poly(c,[[-6,-34],[7,-34],[6,-27],[-5,-27]],'#7c689a');line(c,[[0,-36],[4,-36]],'#f1d99e',1);line(c,[[-8,-42],[-3,-46],[3,-43]],'#a28ac0',1)}
