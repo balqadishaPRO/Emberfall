@@ -1,0 +1,8 @@
+import assert from 'node:assert/strict';
+const drawCalls=[];
+const target={drawImage(...args){drawCalls.push(args)},save(){},restore(){}};
+globalThis.document={createElement(){const marks=[],ctx=new Proxy({fillRect(x,y,w,h){marks.push([x,y,w,h])},rect(x,y,w,h){marks.push([x,y,w,h])}},{get:(o,k)=>o[k]||(()=>{}),set:(o,k,v)=>(o[k]=v,true)});return{width:0,height:0,marks,getContext:()=>ctx}}};
+const {drawRoots,drawField,drawFlameMantle,drawSwing}=await import('../dist/pixel-effects.mjs');
+for(const [name,draw]of [['roots',()=>drawRoots(target,0,0,100,.99)],['fire field',()=>drawField(target,'fire','#ffab67',0,0,100,.99)],['mantle',()=>drawFlameMantle(target,0,0,100,.7)]]){drawCalls.length=0;draw();const [atlas,sx,sy,sw,sh]=drawCalls.at(-1);assert.equal(atlas.width,256*12);assert.equal(atlas.height,256);assert.ok(sx+sw<=atlas.width&&sy+sh<=atlas.height,name+' samples a complete frame');const marks=atlas.marks.filter(([x])=>x>=sx&&x<sx+sw),meanY=marks.reduce((sum,m)=>sum+m[1]+m[3]/2,0)/marks.length;assert.ok(meanY>90&&meanY<155,name+' stays centered on its actual damage area');const before=atlas;draw();assert.equal(drawCalls.at(-1)[0],before,name+' reuses its atlas')}
+drawCalls.length=0;drawSwing(target,0,0,110,0,.1);const first=drawCalls.at(-1);drawSwing(target,0,0,110,0,.9);const last=drawCalls.at(-1);assert.equal(first[0],last[0]);assert.notEqual(first[1],last[1]);assert.equal(first[0].width,160*12);assert.equal(first[0].height,160*16);
+console.log('Pixel effects checks passed: fine 256px fields, 12 animation frames, centered damage feedback, complete frame bounds, 16-direction sword sweeps, and atlas reuse.');

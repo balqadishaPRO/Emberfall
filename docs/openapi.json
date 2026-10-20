@@ -1,0 +1,573 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Emberfall player records",
+    "version": "1.0.0",
+    "description": "Same-origin API. Browser generates and keeps a private 64-character lowercase hex credential. PUT /api/player idempotently creates a UUID identity or renames it. Only credential hashes reach Postgres. Scores are client-reported, not verified gameplay. All errors are JSON; offline or unconfigured storage returns 503. Throttling returns 429 with Retry-After: 60. Requests use application/json and are limited to 2048 bytes."
+  },
+  "servers": [
+    {
+      "url": "http://127.0.0.1:8080",
+      "description": "Local development"
+    }
+  ],
+  "paths": {
+    "/api/player": {
+      "get": {
+        "summary": "Read your profile and best run (null run fields before your first result)",
+        "security": [
+          {
+            "playerCredential": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Player"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Request rejected; see error text.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Request rejected; see error text.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Request rejected; see error text.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Request rejected; see error text.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Request rejected; see error text.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Request rejected; see error text.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Request rejected; see error text.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "summary": "Create or rename your profile; a retry with the same credential keeps its ID",
+        "security": [
+          {
+            "playerCredential": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "nickname"
+                ],
+                "properties": {
+                  "nickname": {
+                    "type": "string",
+                    "minLength": 2,
+                    "maxLength": 24,
+                    "description": "Trimmed and NFC-normalized. Unicode letters/numbers, spaces, underscore, period, apostrophe, hyphen. Duplicate nicknames allowed."
+                  }
+                },
+                "example": {
+                  "nickname": "Last Light"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Player"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Request rejected; see error text.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Request rejected; see error text.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Request rejected; see error text.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Request rejected; see error text.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Request rejected; see error text.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Request rejected; see error text.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Request rejected; see error text.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/records": {
+      "post": {
+        "summary": "Submit a finished or explicitly ended run, retaining only your best",
+        "security": [
+          {
+            "playerCredential": []
+          }
+        ],
+        "description": "A player profile must already exist. Higher survival wins; kills break equal-time ties. Class and kills are from the same winning run. Duplicate or worse submissions return 200 with improved=false. Timestamps remain unchanged on duplicate submissions. Survival time is capped at 24 hours.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Run"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "improved",
+                    "player"
+                  ],
+                  "properties": {
+                    "improved": {
+                      "type": "boolean"
+                    },
+                    "player": {
+                      "$ref": "#/components/schemas/Player"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Request rejected; see error text.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Request rejected; see error text.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Request rejected; see error text.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Request rejected; see error text.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Request rejected; see error text.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Request rejected; see error text.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Request rejected; see error text.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/leaderboard": {
+      "get": {
+        "summary": "Read at most 50 public best runs",
+        "security": [],
+        "description": "One row per player. Sort: survivedMs descending, kills descending, achievement time ascending, player UUID ascending. Rank is the ordinal position (1..50). No pagination. No private credentials or hashes appear in responses. No records returns entries=[].",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "entries"
+                  ],
+                  "properties": {
+                    "entries": {
+                      "type": "array",
+                      "maxItems": 50,
+                      "items": {
+                        "allOf": [
+                          {
+                            "$ref": "#/components/schemas/Player"
+                          },
+                          {
+                            "type": "object",
+                            "required": [
+                              "rank"
+                            ],
+                            "properties": {
+                              "rank": {
+                                "type": "integer",
+                                "minimum": 1,
+                                "maximum": 50
+                              },
+                              "survivedMs": {
+                                "type": "integer"
+                              },
+                              "kills": {
+                                "type": "integer"
+                              },
+                              "classId": {
+                                "$ref": "#/components/schemas/Class"
+                              }
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Request rejected; see error text.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Request rejected; see error text.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Request rejected; see error text.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Request rejected; see error text.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Request rejected; see error text.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Request rejected; see error text.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Request rejected; see error text.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "playerCredential": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "256-bit random private credential, encoded as exactly 64 lowercase hex characters. Public UUIDs are not credentials."
+      }
+    },
+    "schemas": {
+      "Player": {
+        "type": "object",
+        "required": [
+          "id",
+          "nickname",
+          "survivedMs",
+          "kills",
+          "classId"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "nickname": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 24
+          },
+          "survivedMs": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 1,
+            "maximum": 86400000
+          },
+          "kills": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 0,
+            "maximum": 10000000
+          },
+          "classId": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Class"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      },
+      "Class": {
+        "type": "string",
+        "enum": [
+          "archer",
+          "fighter",
+          "assassin",
+          "mage",
+          "tank",
+          "healer",
+          "shapeshifter"
+        ]
+      },
+      "Run": {
+        "type": "object",
+        "required": [
+          "survivedMs",
+          "kills",
+          "classId"
+        ],
+        "properties": {
+          "survivedMs": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 86400000
+          },
+          "kills": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 10000000
+          },
+          "classId": {
+            "$ref": "#/components/schemas/Class"
+          }
+        },
+        "example": {
+          "survivedMs": 123456,
+          "kills": 42,
+          "classId": "mage"
+        }
+      },
+      "Error": {
+        "type": "object",
+        "required": [
+          "error"
+        ],
+        "properties": {
+          "error": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

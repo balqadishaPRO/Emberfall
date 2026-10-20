@@ -1,0 +1,13 @@
+{
+  "name": "emberfall",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "start": "node scripts/serve.mjs",
+    "db:migrate": "node server/migrate.mjs",
+    "test:leaderboard": "node --test scripts/leaderboard-test.mjs scripts/records-test.mjs"
+  },
+  "dependencies": { "pg": "8.23.1" },
+  "devDependencies": { "@electric-sql/pglite": "0.5.10" }
+}

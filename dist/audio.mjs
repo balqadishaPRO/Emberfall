@@ -11,6 +11,7 @@ export class GameAudio {
   if(kind==='bow'){this.noise(.07,.07,2300);this.note(780,.07,'triangle',.035,null,'effects',220)}
   else if(kind==='slash'){this.noise(.15,.15,1000);this.note(190,.1,'triangle',.045,null,'effects',65)}
   else if(kind==='spell'){this.note(620,.22,'sine',.06,null,'effects',180);this.noise(.12,.035,3500)}
+  else if(kind==='blast'){this.noise(.35,.16,320);this.note(100,.3,'triangle',.08,null,'effects',35)}
   else if(kind==='hostile')this.note(320,.09,'triangle',.035,null,'effects',140);
   else if(kind==='hurt'){this.noise(.2,.24,420);this.note(105,.22,'sawtooth',.09,null,'effects',42)}
   else if(kind==='kill')this.note(580,.06,'triangle',.025,null,'effects',800);

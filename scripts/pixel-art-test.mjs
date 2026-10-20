@@ -1,0 +1,11 @@
+import assert from 'node:assert/strict';
+import {paintPixelActor,paintPixelIcon,ANIMATION} from '../dist/pixel-art.mjs';
+import {classes,monsters,petKinds,createGame,spawnEnemy,hurtEnemy} from '../dist/engine.mjs';
+const kinds=[...classes.map(c=>c.id),...Object.keys(monsters),...petKinds],silhouettes=new Set();
+function capture(kind,frame){const calls=[],c=new Proxy({},{get:(_,key)=>(...args)=>{assert.ok(args.filter(v=>typeof v==='number').every(Number.isFinite),kind+' finite '+key);assert.ok(!['ellipse','arc','stroke','bezierCurveTo','quadraticCurveTo','createLinearGradient','createRadialGradient','rotate'].includes(key),'art uses native pixel rectangles only');if(key==='fillRect')assert.ok(args.every(Number.isInteger),'pixel coordinates align to the source grid');calls.push([key,...args])},set:(_,key,v)=>{calls.push([key,v]);return true}});paintPixelActor(c,kind,'#9bb582',frame);return JSON.stringify(calls)}
+assert.equal(kinds.length,28);assert.equal(ANIMATION.frames,32);
+for(const kind of kinds){silhouettes.add(capture(kind,0));const walk=new Set(Array.from({length:8},(_,i)=>capture(kind,ANIMATION.walk+i)));assert.ok(walk.size>=4,kind+' has multiple walking or flying poses');assert.notEqual(capture(kind,ANIMATION.hurt),capture(kind,ANIMATION.hurt+3),kind+' reacts to hits');assert.ok(capture(kind,ANIMATION.attack)!==capture(kind,ANIMATION.attack+3),kind+' has an attack sequence')}
+assert.equal(silhouettes.size,28,'every hero, enemy, and companion has its own pixel silhouette');
+for(const icon of ['archer','fighter','assassin','mage','tank','healer','shapeshifter','trophy','guide','settings','fullscreen','fire','nature','arcane']){let painted=0;paintPixelIcon({width:24,height:24,getContext:()=>new Proxy({},{get:()=>()=>{painted++},set:()=>true})},icon);assert.ok(painted>5,icon+' has a pixel icon')}
+const g=createGame(81);g.status='playing';const e=spawnEnemy(g,'walker',{x:200,y:0});hurtEnemy(g,e,1e6,{direct:false});const death=g.effects.find(e=>e.kind==='death');assert.equal(death.actorKind,'walker');assert.equal(death.actorScale,1,'defeat keeps the actor silhouette for its death animation');
+console.log('Pixel art checks passed: 28 distinct pixel actors, 32-pose atlases, eight-phase movement, attack/hit sequences, finite integer pixels, original UI icons, and actor death feedback.');

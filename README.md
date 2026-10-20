@@ -4,10 +4,11 @@ A lightweight, fullscreen, solo 2D survival game for the browser. Seven classes 
 
 ## Run
 
-Node.js 18+, no dependencies or build step:
+Node.js 22+, no frontend build step:
 
 ```sh
-node scripts/serve.mjs
+npm ci
+npm start
 ```
 
 Open http://127.0.0.1:8080. For a different port in PowerShell:
@@ -17,7 +18,11 @@ $env:PORT = '8084'
 node scripts/serve.mjs
 ```
 
-Deploy `dist/` on a static host that serves `.mjs` as JavaScript. The optional Go server also works with `go run ./cmd/server`. The earlier Go micro-RTS prototype is preserved at `/micro-command.html`, along with its Go/WebAssembly source and assets.
+For public accounts and persistent leaderboards, deploy the Node server with a separate Postgres database. **Neon Free is the recommended database**: its current plan has no time limit and automatically wakes idle compute. See [database research, setup, Render deployment, and backups](docs/deployment.md). `render.yaml`, `.env.example`, and an additive SQL migration are included. Without `DATABASE_URL`, the game remains playable locally and completed records wait in the browser for upload.
+
+The trophy button opens player profiles and the top 50 survivors. Choose a nickname to get a random player ID remembered on this browser. Records save on death or explicit end-run: longest survival, kills on that run, and chosen class. Kills break equal-time ties. These are client-reported scores, so the leaderboard is intended for casual play.
+
+Static hosting of `dist/` and the optional Go server (`go run ./cmd/server`) support local gameplay only. The earlier Go micro-RTS prototype is preserved at `/micro-command.html`, along with its Go/WebAssembly source and assets.
 
 ## Controls and compact interface
 
@@ -29,7 +34,7 @@ Deploy `dist/` on a static host that serves `.mjs` as JavaScript. The optional G
 
 The compact top-right panel holds health, XP, level, time, kills, a small elite countdown, and the active button. A ready ultimate has a saturated class color, bright border, and larger icon; it does not pulse or animate. Hover over the clock for wave and difficulty budget. Boss/miniboss names and health bars appear above their heads. There is no bottom dock, top-center counter strip, minimap, floating damage text, screen shake, or particle swarms. A 32-unit basic attack cooldown bar sits directly above each class’s head, filling amber and turning pale green when ready. Melee classes have a transparent primary attack-range circle that follows reach and area upgrades.
 
-The renderer plays four baked illustrated poses (idle, two walking/flying frames, attack) from sprite atlases, including mirrored frames. No character paths or glow filters run in the frame loop. System reduced-motion preference disables pose playback. Pausing freezes the simulation/animation clock. Rendering targets 60 FPS with corrected frame pacing and drops to 30 if measured draw submission cost exceeds the budget. Simulation remains at 60 Hz. Canvas pixel density is capped at 1.5 and 1.8 million backing pixels, dropping to 1× for crowded fights. Terrain has a separate canvas and redraws only when camera position or viewport size changes, or during a brief realm crossfade. Render lists and collision buckets are reused. CSS transitions remain disabled.
+The renderer plays 32 cached pixel poses per actor: four idle poses, eight movement poses, eight attack poses, six casting poses, and six hit-reaction poses, including mirrored facing. Native one-world-pixel artwork keeps fine equipment and material detail. Pausing freezes animation. Reduced motion follows the system preference unless overridden in Settings. Rendering targets 60 FPS, adapts to 30 under draw pressure, and keeps simulation at 60 Hz. Sprite and effect atlases, a separate terrain layer, bounded map caches, and reused collision/render buffers keep frame work predictable.
 
 ## Seven classes
 
@@ -99,6 +104,7 @@ Original procedural ambient music and synthesized bow, melee, spell, hit, kill, 
 ## Verification
 
 ```sh
+npm run test:leaderboard
 node --check dist/engine.mjs
 node --check dist/render.mjs
 node --check dist/survival.mjs
@@ -128,9 +134,11 @@ Checks cover all seven class attacks, unique ranked pets, buffed pet damage, fix
 - `dist/engine.mjs`: deterministic combat, classes, passives, pets, elite aspects, and encounter director.
 - `dist/effects.mjs`: recycled, rate-limited visual effects with reserved capacity for class casts.
 - `dist/worlds.mjs`: ten terrain/material sets, distinct obstacle models, bounded three-map cache, next-scene idle prewarming, and subtle pixel accents.
-- `dist/render.mjs`: cached illustrated animation atlases, terrain layer, melee reach circles, warning geometry, projectiles, adaptive resolution, and overhead health.
-- `dist/heroes.mjs`: detailed class-specific models baked into mirrored movement and attack atlases.
-- `dist/pixel-effects.mjs`: six-frame pixel burst atlases, shared across casts, impacts, and deaths.
+- `dist/render.mjs`: 32-pose cached pixel animation atlases, terrain layer, melee reach circles, warning geometry, projectiles, adaptive resolution, and overhead health.
+- `dist/pixel-art.mjs`: the active native-pixel artwork for all 28 actors, ten realms, obstacles, and UI icons.
+- `dist/pixel-ui.css`: the pixel interface and bundled original bitmap typeface.
+- `dist/heroes.mjs`: legacy illustrated model helpers retained for existing art references.
+- `dist/pixel-effects.mjs`: twelve-frame fine-pixel fields and bursts, 32-direction projectiles/blades, 16-direction sword sweeps, footfalls, and status effects.
 - `dist/illustrations.mjs`: the original organic terrain and detailed character/companion art, rasterized only when creating cached textures.
 - `dist/survival.mjs`: menu, compact HUD, decisions, controls, guide, audio settings, and records.
 - `dist/audio.mjs`: original music and combat synthesis.
@@ -201,3 +209,9 @@ Realm changes crossfade terrain, obstacle models, and ambient accents over 0.9 s
 All fourteen enemy types gained readable attack-role features and material detail: skeletal armor and broken blades, archer quivers, bat wing veins and fangs, brute plates and clubs, ram armor and horns, Ravager mane/tusks, spitter poison sacs and pores, bone-masked summoners with grimoires, masked hexers and runic gear, torn wraith cloth, Broodmother segments and eyes, Warden engravings and moss, frost crowns and icicles, and dragon scales and wing ribs. Class models gained surface lighting, fabric seams, edge highlights, and fasteners; companions, terrain, and obstacle materials have extra detail. Model gradients are baked once into the atlases; runtime combat effects remain pixel art. Class selection now shows the actual cached model portraits.
 
 The richer-effects browser sample held 96 enemies, 219 hostile shots, and 32 effects, averaging 0.21 ms simulation and 2.54 ms draw submission. A 15,000-step simulation benchmark measured 1307 ms. These are machine-dependent CPU samples, not display FPS guarantees. Tests additionally cover Space keydown/keyup protection, elemental field events, reduced-motion swings, fade intermediate opacity/completion, layout isolation, per-run collisions, and fourteen distinct detailed enemy overlays.
+
+## Native pixel art and expanded animation
+
+The active game, menu portraits, companions, enemies, and all ten realm maps now use detailed native pixel artwork. Actor atlases contain 32 poses per facing, with walk cycles, attack anticipation and recovery, casting, and hit reactions. Death feedback retains a fading actor silhouette. Small footfall dust, wing motes, poison, burning, freezing, critical-hit, dodge, meteor, and scenery animations use the simulation clock and leave combat RNG untouched. Effect fields use 256-pixel source frames to keep particles small at normal game scale.
+
+The original UI alphabet is bundled at `dist/fonts/ember-pixel.ttf`; regenerate it with `node scripts/build-pixel-font.mjs`. Pixel checks: `node scripts/pixel-art-test.mjs` and `node scripts/pixel-effects-test.mjs`. The existing renderer, world, combat, and controller checks also cover the updated graphics.

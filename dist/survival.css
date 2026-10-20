@@ -10,3 +10,34 @@
 .world-state{display:flex;justify-content:space-between;gap:6px;margin-top:10px;padding-top:7px;border-top:1px solid #71866244;font-size:9px;color:#b3c6b8}.world-state span:last-child{font-variant-numeric:tabular-nums;color:#d5d5b0}
 
 .class-portrait{display:block;width:106px;height:88px;margin:-5px auto 3px;pointer-events:none}.class-card .class-icon{display:none}.class-card{overflow:hidden}.class-card h2{margin-top:2px}@media(max-width:700px){.class-portrait{width:96px;height:80px;margin:-4px auto 2px}}
+
+.player-form{margin-top:24px}.player-form label{display:block;margin-bottom:8px;color:var(--gold)}.profile-fields{display:flex;gap:10px}.profile-fields input{min-width:0;flex:1;background:#12271e;border:1px solid var(--line);border-radius:5px;padding:12px;color:var(--ink)}.profile-note{color:var(--muted);font-size:12px;line-height:1.6}.leaderboard-heading{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:28px}.leaderboard-heading h3{font-size:16px}.leaderboard-heading button{font-size:12px;border-radius:5px}#records-status{min-height:1.5em;color:var(--gold);font-size:13px;line-height:1.6}.leaderboard-scroll{overflow-x:auto}.leaderboard-table{width:100%;border-collapse:collapse;font-size:14px;text-align:left;font-variant-numeric:tabular-nums}.leaderboard-table th,.leaderboard-table td{padding:12px 10px;border-bottom:1px solid #71866244}.leaderboard-table thead{color:var(--muted);font-size:11px;text-transform:uppercase}.leaderboard-table tbody th{font-weight:500;max-width:230px;overflow-wrap:anywhere}.leaderboard-table small{display:block;color:var(--muted);font-size:10px;margin-top:3px}.leaderboard-table .your-score{background:#dac07a12;color:var(--gold)}.running .topbar{width:250px}@media(max-width:700px){.running .topbar{width:240px}.profile-fields{flex-direction:column}.leaderboard-table th,.leaderboard-table td{padding:10px 6px;font-size:12px}.topbar{left:12px;right:12px}.brand{font-size:12px;letter-spacing:1px}.topbar nav{gap:3px}.topbar button{width:30px}.leaderboard-heading{align-items:flex-start}}
+
+/* Blue protection overlays the upper half of HP without hiding remaining health. */
+.health-track{position:relative;height:10px}#shield-fill{position:absolute;left:0;top:0;height:50%;width:0;background:#75caff;border-top:1px solid #dcf6ff;box-shadow:0 1px 3px #1c476e}
+
+/* Title screen and the separate hero-selection step. */
+.home-overlay{background:linear-gradient(110deg,#0b1b18f5 10%,#10251ce6 60%,#162d20c9);align-items:center}
+.home-menu{width:min(1060px,100%);margin:auto;display:grid;grid-template-columns:1.05fr 1fr;align-items:center;column-gap:36px;row-gap:42px}
+.home-content{position:relative;z-index:1}.home-content>.eyebrow{color:#b8c6a2;font-size:10px;letter-spacing:3px}
+.home-menu h1{font:400 clamp(66px,7.3vw,104px)/1 Georgia,serif;letter-spacing:-4px;color:#f3d79d;margin:24px 0}
+.home-menu h1 span{display:block;font:500 12px/1.5 system-ui,sans-serif;text-transform:uppercase;letter-spacing:7px;color:#bdc9af;margin-top:18px;padding-left:5px}
+.home-intro{font:400 20px/1.7 Georgia,serif;color:#becbb7;margin:28px 0 32px}
+.home-actions{max-width:390px}.home-actions>.gold-button{width:100%;display:flex;justify-content:space-between;align-items:center;text-align:left;font-size:18px;padding:17px 22px;box-shadow:0 5px 30px #d2a95314}
+.home-actions>.gold-button span{font-size:24px}.home-links{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}.home-links button{font-size:11px;padding:12px 5px;background:#21392a99;border-color:#92a47e44}
+.home-controls{color:#8fa28c;font-size:10px;line-height:1.8;margin:21px 0 0}
+.home-art{position:relative;height:370px;isolation:isolate;display:flex;align-items:center;justify-content:center}
+.home-halo{position:absolute;width:330px;height:330px;border:1px solid #b3c28d24;border-radius:50%;background:radial-gradient(circle at 50% 60%,#e4b76820,transparent 65%);box-shadow:0 0 0 28px #aac78906,0 0 0 65px #aac78904}
+.home-halo:after{content:'';position:absolute;inset:18px;border:1px dashed #b3c28d29;border-radius:50%}
+.home-star{position:absolute;top:28px;left:50%;transform:translateX(-50%);color:#ebcd83;font:80px/1 Georgia,serif;text-shadow:0 0 40px #f0bc6755}
+.home-party{position:absolute;inset:100px -20px 25px;display:flex;align-items:flex-end;justify-content:center}
+.home-party canvas{width:210px;height:173px;object-fit:contain;flex-shrink:0;filter:drop-shadow(0 12px 16px #07180f)}
+.home-party canvas:first-child{margin-right:-85px;transform:translateY(-12px)}.home-party canvas:nth-child(2){position:relative;z-index:1;width:255px;height:210px}.home-party canvas:last-child{margin-left:-85px;transform:translateY(-12px)}
+.home-art-caption{position:absolute;bottom:0;font-size:8px;letter-spacing:3px;color:#9eb494}
+.home-footer{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;border-top:1px solid #a6ba812b;padding-top:23px}
+.home-record{display:flex;align-items:center;gap:18px}.home-record span{font-size:8px;letter-spacing:1.5px;color:#a1b09a}.home-record strong{font:28px/1 Georgia,serif;color:#e9cb8d}.home-footer>p{margin:0;color:#90a58c;font-size:10px}.home-footer>p span{padding:0 12px;color:#c8b67d}
+.menu-back{padding:7px 0;margin:0 0 20px;border:0;background:transparent;color:#b9c8ac;font-size:12px}.menu-back:hover{background:transparent;color:#edcc78}.pause-actions{flex-wrap:wrap}
+@media(max-width:800px){.home-menu{column-gap:10px}.home-menu h1{font-size:70px}.home-art{height:330px}.home-halo{width:250px;height:250px}.home-party canvas{width:170px;height:140px}.home-party canvas:nth-child(2){width:210px;height:173px}.home-party canvas:first-child{margin-right:-80px}.home-party canvas:last-child{margin-left:-80px}.home-content>.eyebrow{font-size:8px;letter-spacing:2px}}
+@media(max-width:600px){.home-overlay{padding:80px 24px 28px}.home-menu{grid-template-columns:1fr;gap:26px;max-width:430px}.home-menu h1{font-size:clamp(60px,16vw,80px);margin:18px 0;letter-spacing:-3px}.home-menu h1 span{font-size:10px;letter-spacing:5px}.home-intro{font-size:18px;margin:22px 0}.home-art{display:none}.home-actions{max-width:none}.home-controls{font-size:9px}.home-footer{align-items:flex-start;gap:20px;flex-direction:column;padding-top:20px}.home-record span{font-size:8px}.home-links button{font-size:11px}.home-footer>p span{padding:0 10px}}
+
+.home-screen #game{visibility:hidden}.home-screen .topbar #leaderboard-button,.home-screen .topbar #codex,.home-screen .topbar #settings,.home-screen .topbar #pause{display:none}
